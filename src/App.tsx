@@ -1,49 +1,315 @@
 
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
+import type { User } from "@supabase/supabase-js";
+import { supabase } from "./lib/supabase";
 
 type Education = {
-  level: string;
+  id?: string;
+  qualification: string;
   institution: string;
-  group: string;
+  subject: string;
   result: string;
-  year: string;
+  passing_year: string;
+};
+
+const emptyEducation: Education = {
+  qualification: "SSC",
+  institution: "",
+  subject: "",
+  result: "",
+  passing_year: "",
+};
+
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  padding: 12,
+  border: "1px solid #dce3ed",
+  borderRadius: 8,
+  fontSize: 14,
+  boxSizing: "border-box",
+  marginTop: 6,
+};
+
+const buttonStyle: React.CSSProperties = {
+  padding: "13px 18px",
+  background: "#1746a2",
+  color: "white",
+  border: 0,
+  borderRadius: 8,
+  cursor: "pointer",
+  fontWeight: 700,
 };
 
 export default function App() {
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [step, setStep] = useState(1);
-  const [saved, setSaved] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
 
   const [profile, setProfile] = useState({
-    name: "",
-    email: "student@gmail.com",
+    full_name: "",
+    email: "",
     phone: "",
-    dob: "",
+    date_of_birth: "",
     nationality: "Bangladeshi",
-    passportNumber: "",
+    passport_number: "",
+    passport_path: "",
   });
+
+  const [education, setEducation] = useState<Education[]>([
+    { ...emptyEducation },
+    { ...emptyEducation, qualification: "HSC" },
+  ]);
 
   const [passport, setPassport] = useState<File | null>(null);
 
-  const [education, setEducation] = useState<Education[]>([
-    {
-      level: "SSC",
-      institution: "",
-      group: "",
-      result: "",
-      year: "",
-    },
-    {
-      level: "HSC",
-      institution: "",
-      group: "",
-      result: "",
-      year: "",
-    },
-  ]);
+  useEffect(() => {
+    let mounted = true;
+
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (!mounted) return;
+      if (error) setMessage(error.message);
+      setUser(data.session?.user ?? null);
+      setLoading(false);
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (!mounted) return;
+        setUser(session?.user ?? null);
+      }
+    );
+
+    return () => {
+      mounted = false;
+      listener.subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+
+    let cancelled = false;
+
+    async function loadData() {
+      const { data: p, error: profileError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user!.id)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      if (profileError) {
+        setMessage(profileError.message);
+        return;
+      }
+
+      if (p) {
+        setProfile({
+          full_name: p.full_name ?? "",
+          email: p.email ?? user!.email ?? "",
+          phone: p.phone ?? "",
+          date_of_birth: p.date_of_birth ?? "",
+          nationality: p.nationality ?? "Bangladeshi",
+          passport_number: p.passport_number ?? "",
+          passport_path: p.passport_path ?? "",
+        });
+      } else {
+        setProfile((old) => ({
+          ...old,
+          email: user!.email ?? "",
+          full_name:
+            user!.user_metadata?.full_name ??
+            user!.user_metadata?.name ??
+            "",
+        }));
+      }
+
+      const { data: records, error: educationError } = await supabase
+        .from("education_history")
+        .select("*")
+        .eq("user_id", user!.id)
+        .order("created_at");
+
+      if (cancelled) return;
+
+      if (educationError) {
+        setMessage(educationError.message);
+        return;
+      }
+
+      if (records?.length) {
+        setEducation(
+          records.map((record) => ({
+            id: record.id,
+            qualification: record.qualification,
+            institution: record.institution ?? "",
+            subject: record.subject ?? "",
+            result: record.result ?? "",
+            passing_year: record.passing_year ?? "",
+          }))
+        );
+      }
+    }
+
+    loadData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   const updateProfile = (key: string, value: string) => {
-    setProfile((prev) => ({ ...prev, [key]: value }));
+    setProfile((old) => ({ ...old, [key]: value }));
+  };
+
+  const loginWithGoogle = async () => {
+    setBusy(true);
+    setMessage("");
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
+
+    if (error) {
+      setMessage(error.message);
+      setBusy(false);
+    }
+  };
+
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) setMessage(error.message);
+  };
+
+  const saveProfile = async () => {
+    if (!user) return;
+
+    setBusy(true);
+    setMessage("");
+
+    const { error } = await supabase.from("profiles").upsert({
+      id: user.id,
+      ...profile,
+      email: user.email ?? profile.email,
+      updated_at: new Date().toISOString(),
+    });
+
+    setBusy(false);
+    setMessage(error ? error.message : "Profile saved successfully!");
+  };
+
+  const uploadPassport = async () => {
+    if (!user || !passport) {
+      setMessage("Please choose a passport file first.");
+      return;
+    }
+
+    const allowed = ["application/pdf", "image/jpeg", "image/png"];
+
+    if (!allowed.includes(passport.type)) {
+      setMessage("Only PDF, JPG and PNG files are allowed.");
+      return;
+    }
+
+    if (passport.size > 5 * 1024 * 1024) {
+      setMessage("File size must be 5 MB or less.");
+      return;
+    }
+
+    setBusy(true);
+    setMessage("");
+
+    const extension = passport.name.split(".").pop()?.toLowerCase() || "pdf";
+    const path = `${user.id}/passport.${extension}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("passport-documents")
+      .upload(path, passport, {
+        upsert: true,
+        contentType: passport.type,
+      });
+
+    if (uploadError) {
+      setBusy(false);
+      setMessage(uploadError.message);
+      return;
+    }
+
+    const { error: saveError } = await supabase
+      .from("profiles")
+      .upsert({
+        id: user.id,
+        ...profile,
+        email: user.email ?? profile.email,
+        passport_path: path,
+        updated_at: new Date().toISOString(),
+      });
+
+    if (saveError) {
+      setBusy(false);
+      setMessage(saveError.message);
+      return;
+    }
+
+    setProfile((old) => ({ ...old, passport_path: path }));
+    setPassport(null);
+    setBusy(false);
+    setMessage("Passport uploaded securely!");
+  };
+
+  const saveEducation = async () => {
+    if (!user) return;
+
+    setBusy(true);
+    setMessage("");
+
+    const valid = education.filter(
+      (item) => item.qualification.trim() && item.institution.trim()
+    );
+
+    const { error: deleteError } = await supabase
+      .from("education_history")
+      .delete()
+      .eq("user_id", user.id);
+
+    if (deleteError) {
+      setBusy(false);
+      setMessage(deleteError.message);
+      return;
+    }
+
+    if (valid.length) {
+      const rows = valid.map((item) => ({
+        user_id: user.id,
+        qualification: item.qualification,
+        institution: item.institution,
+        subject: item.subject,
+        result: item.result,
+        passing_year: item.passing_year,
+      }));
+
+      const { error } = await supabase
+        .from("education_history")
+        .insert(rows);
+
+      if (error) {
+        setBusy(false);
+        setMessage(error.message);
+        return;
+      }
+    }
+
+    setBusy(false);
+    setMessage("Educational history saved successfully!");
+  };
+
+  const addEducation = () => {
+    setEducation((old) => [...old, { ...emptyEducation }]);
   };
 
   const updateEducation = (
@@ -51,186 +317,90 @@ export default function App() {
     key: keyof Education,
     value: string
   ) => {
-    setEducation((prev) =>
-      prev.map((item, i) =>
+    setEducation((old) =>
+      old.map((item, i) =>
         i === index ? { ...item, [key]: value } : item
       )
     );
   };
 
-  const addEducation = () => {
-    setEducation((prev) => [
-      ...prev,
-      {
-        level: "Bachelor's",
-        institution: "",
-        group: "",
-        result: "",
-        year: "",
-      },
-    ]);
-  };
+  if (loading) {
+    return (
+      <div style={{ padding: 50, textAlign: "center" }}>
+        Loading NorthBridge Portal...
+      </div>
+    );
+  }
 
-  const removeEducation = (index: number) => {
-    setEducation((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const inputStyle: React.CSSProperties = {
-    width: "100%",
-    padding: "13px 14px",
-    border: "1px solid #dce3ed",
-    borderRadius: 9,
-    outline: "none",
-    fontSize: 14,
-    boxSizing: "border-box",
-    background: "#fff",
-    color: "#172033",
-  };
-
-  const labelStyle: React.CSSProperties = {
-    display: "block",
-    fontSize: 13,
-    fontWeight: 600,
-    color: "#344054",
-    marginBottom: 7,
-  };
-
-  const field = (
-    label: string,
-    value: string,
-    onChange: (v: string) => void,
-    placeholder = "",
-    type = "text"
-  ) => (
-    <div style={{ marginBottom: 18 }}>
-      <label style={labelStyle}>{label}</label>
-      <input
-        style={inputStyle}
-        type={type}
-        value={value}
-        placeholder={placeholder}
-        onChange={(e) => onChange(e.target.value)}
-      />
-    </div>
-  );
-
-  const buttonStyle: React.CSSProperties = {
-    width: "100%",
-    padding: "14px",
-    border: "none",
-    borderRadius: 9,
-    background: "#1746a2",
-    color: "white",
-    fontWeight: 700,
-    fontSize: 15,
-    cursor: "pointer",
-  };
-
-  const cardStyle: React.CSSProperties = {
-    background: "white",
-    borderRadius: 15,
-    padding: 25,
-    border: "1px solid #e7ebf2",
-    boxShadow: "0 8px 30px rgba(16,35,70,.05)",
-  };
-
-  const headingStyle: React.CSSProperties = {
-    color: "#172b4d",
-    fontSize: 22,
-    fontWeight: 800,
-    margin: "0 0 8px",
-  };
-
-  // DEMO LOGIN SCREEN
-  if (!loggedIn) {
+  if (!user) {
     return (
       <div style={{
         minHeight: "100vh",
-        background: "linear-gradient(135deg,#071a38,#123d78,#1764a5)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
+        display: "grid",
+        placeItems: "center",
         padding: 20,
-        fontFamily: "Arial, sans-serif",
+        background: "linear-gradient(135deg,#071a38,#1764a5)",
+        fontFamily: "Arial",
       }}>
         <div style={{
-          ...cardStyle,
+          background: "white",
+          borderRadius: 16,
+          padding: 40,
           width: "100%",
-          maxWidth: 420,
-          padding: "40px 32px",
+          maxWidth: 400,
           textAlign: "center",
+          boxSizing: "border-box",
         }}>
-          <div style={{
-            width: 58,
-            height: 58,
-            background: "#1746a2",
-            color: "white",
-            borderRadius: 15,
-            display: "grid",
-            placeItems: "center",
-            fontSize: 25,
-            fontWeight: 900,
-            margin: "0 auto 18px",
-          }}>
-            N
-          </div>
-
-          <h1 style={{ color: "#15345f", margin: 0, fontSize: 27 }}>
-            NorthBridge
-          </h1>
-          <p style={{ color: "#667085", marginTop: 8 }}>
+          <h1 style={{ color: "#15345f" }}>NorthBridge</h1>
+          <p style={{ color: "#667085" }}>
             Student Application Portal
           </p>
 
-          <div style={{
-            background: "#eff6ff",
-            borderRadius: 10,
-            padding: 15,
-            margin: "28px 0",
-            color: "#315783",
-            fontSize: 13,
-            lineHeight: 1.6,
-          }}>
-            Welcome! Sign in to create your student profile
-            and manage your application.
-          </div>
-
           <button
-            onClick={() => setLoggedIn(true)}
             style={{
               ...buttonStyle,
+              width: "100%",
+              marginTop: 25,
               background: "white",
               color: "#25344d",
               border: "1px solid #dce3ed",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              gap: 12,
             }}
+            onClick={loginWithGoogle}
+            disabled={busy}
           >
-            <span style={{ fontSize: 20, fontWeight: 900, color: "#4285F4" }}>
-              G
-            </span>
-            Continue with Google
+            {busy ? "Connecting..." : "🌐 Continue with Google"}
           </button>
 
-          <p style={{
-            color: "#98a2b3",
-            fontSize: 11,
-            marginTop: 22,
-          }}>
-            DEMO MODE · Google authentication not connected
-          </p>
-
-          <p style={{ color: "#667085", fontSize: 12, marginTop: 28 }}>
-            © 2026 NorthBridge Education
-          </p>
+          {message && (
+            <p style={{ color: "#c0392b", fontSize: 13 }}>{message}</p>
+          )}
         </div>
       </div>
     );
   }
 
-  // MAIN PORTAL
+  const field = (
+    label: string,
+    key: keyof typeof profile,
+    type = "text"
+  ) => (
+    <label style={{
+      display: "block",
+      marginBottom: 16,
+      fontSize: 13,
+      fontWeight: 600,
+      color: "#344054",
+    }}>
+      {label}
+      <input
+        style={inputStyle}
+        type={type}
+        value={profile[key]}
+        onChange={(e) => updateProfile(key, e.target.value)}
+      />
+    </label>
+  );
+
   return (
     <div style={{
       minHeight: "100vh",
@@ -241,32 +411,22 @@ export default function App() {
       <header style={{
         background: "#102e59",
         color: "white",
-        padding: "17px 5%",
+        padding: "18px 5%",
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
         flexWrap: "wrap",
         gap: 12,
       }}>
+        <strong style={{ fontSize: 22 }}>NorthBridge</strong>
         <div>
-          <strong style={{ fontSize: 21 }}>NorthBridge</strong>
-          <div style={{ fontSize: 11, color: "#c4d5ed", marginTop: 4 }}>
-            STUDENT APPLICATION PORTAL
-          </div>
-        </div>
-        <div style={{ fontSize: 13 }}>
-          {profile.email}
+          <span style={{ fontSize: 13 }}>{user.email}</span>
           <button
-            onClick={() => {
-              setLoggedIn(false);
-              setStep(1);
-            }}
+            onClick={logout}
             style={{
-              marginLeft: 16,
-              background: "#244875",
-              color: "white",
-              border: 0,
+              marginLeft: 15,
               padding: "9px 14px",
+              border: 0,
               borderRadius: 7,
               cursor: "pointer",
             }}
@@ -277,293 +437,191 @@ export default function App() {
       </header>
 
       <main style={{
-        maxWidth: 1000,
+        maxWidth: 900,
         margin: "35px auto",
         padding: "0 18px",
       }}>
-        <h1 style={headingStyle}>Student Profile</h1>
-        <p style={{ color: "#667085", marginBottom: 28 }}>
-          Complete your profile to proceed with your application.
+        <h1>Student Profile</h1>
+        <p style={{ color: "#667085" }}>
+          Complete your personal and academic information.
         </p>
 
-        <div style={{
-          ...cardStyle,
-          marginBottom: 22,
-          padding: 18,
-        }}>
+        {message && (
           <div style={{
-            display: "flex",
-            justifyContent: "space-between",
-            gap: 10,
-            flexWrap: "wrap",
+            background: "#eaf3ff",
+            padding: 13,
+            borderRadius: 8,
+            margin: "18px 0",
+            color: "#1746a2",
           }}>
-            {["Personal Info", "Passport", "Education"].map((item, i) => (
-              <div
-                key={item}
-                onClick={() => setStep(i + 1)}
-                style={{
-                  flex: 1,
-                  minWidth: 100,
-                  textAlign: "center",
-                  padding: 12,
-                  borderRadius: 9,
-                  background: step === i + 1 ? "#eaf1ff" : "#f8fafc",
-                  color: step === i + 1 ? "#1746a2" : "#667085",
-                  fontWeight: 700,
+            {message}
+          </div>
+        )}
+
+        <section style={{
+          background: "white",
+          padding: 24,
+          borderRadius: 14,
+          marginTop: 22,
+          border: "1px solid #e5eaf1",
+        }}>
+          <h2>Personal Information</h2>
+          {field("Full Name", "full_name")}
+          {field("Email Address", "email")}
+          {field("Phone Number", "phone", "tel")}
+          {field("Date of Birth", "date_of_birth", "date")}
+          {field("Nationality", "nationality")}
+          {field("Passport Number", "passport_number")}
+
+          <button
+            style={buttonStyle}
+            onClick={saveProfile}
+            disabled={busy}
+          >
+            Save Profile
+          </button>
+        </section>
+
+        <section style={{
+          background: "white",
+          padding: 24,
+          borderRadius: 14,
+          marginTop: 22,
+          border: "1px solid #e5eaf1",
+        }}>
+          <h2>Passport Document</h2>
+          <p style={{ color: "#667085", fontSize: 13 }}>
+            PDF, JPG or PNG · Maximum 5 MB · Private storage
+          </p>
+
+          <input
+            type="file"
+            accept=".pdf,.jpg,.jpeg,.png"
+            onChange={(e) => setPassport(e.target.files?.[0] ?? null)}
+          />
+
+          <div style={{ marginTop: 16 }}>
+            <button
+              style={buttonStyle}
+              onClick={uploadPassport}
+              disabled={busy || !passport}
+            >
+              Upload Passport
+            </button>
+          </div>
+
+          {profile.passport_path && (
+            <p style={{ color: "#16804a", fontSize: 13 }}>
+              ✓ Passport uploaded
+            </p>
+          )}
+        </section>
+
+        <section style={{
+          background: "white",
+          padding: 24,
+          borderRadius: 14,
+          marginTop: 22,
+          border: "1px solid #e5eaf1",
+        }}>
+          <h2>Educational History</h2>
+
+          {education.map((item, index) => (
+            <div key={index} style={{
+              padding: 17,
+              background: "#f8fafc",
+              borderRadius: 10,
+              marginBottom: 16,
+            }}>
+              <h3>Qualification {index + 1}</h3>
+
+              <label style={{ fontSize: 13 }}>
+                Qualification
+                <select
+                  style={inputStyle}
+                  value={item.qualification}
+                  onChange={(e) =>
+                    updateEducation(index, "qualification", e.target.value)
+                  }
+                >
+                  {["SSC", "HSC", "Diploma", "Bachelor's", "Master's", "Other"].map(
+                    (level) => <option key={level}>{level}</option>
+                  )}
+                </select>
+              </label>
+
+              {(
+                [
+                  ["Institution", "institution"],
+                  ["Subject / Group", "subject"],
+                  ["Result / CGPA", "result"],
+                  ["Passing Year", "passing_year"],
+                ] as const
+              ).map(([label, key]) => (
+                <label key={key} style={{
+                  display: "block",
+                  marginTop: 13,
                   fontSize: 13,
+                  fontWeight: 600,
+                }}>
+                  {label}
+                  <input
+                    style={inputStyle}
+                    value={item[key]}
+                    onChange={(e) =>
+                      updateEducation(index, key, e.target.value)
+                    }
+                  />
+                </label>
+              ))}
+
+              <button
+                onClick={() =>
+                  setEducation((old) => old.filter((_, i) => i !== index))
+                }
+                style={{
+                  marginTop: 12,
+                  border: 0,
+                  background: "#feecec",
+                  color: "#b42318",
+                  padding: 9,
+                  borderRadius: 7,
                   cursor: "pointer",
                 }}
               >
-                <div style={{ marginBottom: 5 }}>0{i + 1}</div>
-                {item}
-              </div>
-            ))}
-          </div>
-        </div>
+                Remove
+              </button>
+            </div>
+          ))}
 
-        {saved ? (
-          <div style={{ ...cardStyle, textAlign: "center", padding: 45 }}>
-            <div style={{ fontSize: 48 }}>✓</div>
-            <h2 style={{ color: "#16804a" }}>Profile Submitted!</h2>
-            <p style={{ color: "#667085", lineHeight: 1.7 }}>
-              Your demo student profile has been submitted successfully.
-              This prototype does not yet save data to a server.
-            </p>
-            <button
-              style={{ ...buttonStyle, maxWidth: 240, marginTop: 15 }}
-              onClick={() => {
-                setSaved(false);
-                setStep(1);
-              }}
-            >
-              Edit Profile
-            </button>
-          </div>
-        ) : (
-          <>
-            {step === 1 && (
-              <section style={cardStyle}>
-                <h2 style={headingStyle}>Personal Information</h2>
-                <p style={{ color: "#667085", fontSize: 13, marginBottom: 25 }}>
-                  Enter your basic personal details.
-                </p>
+          <button
+            onClick={addEducation}
+            style={{
+              ...buttonStyle,
+              background: "#eaf1ff",
+              color: "#1746a2",
+              marginRight: 10,
+            }}
+          >
+            + Add Qualification
+          </button>
 
-                {field("Full Name", profile.name, v => updateProfile("name", v), "Enter your full name")}
-                {field("Email Address", profile.email, v => updateProfile("email", v), "Email address", "email")}
-                {field("Phone Number", profile.phone, v => updateProfile("phone", v), "+8801XXXXXXXXX", "tel")}
-                {field("Date of Birth", profile.dob, v => updateProfile("dob", v), "", "date")}
-                {field("Nationality", profile.nationality, v => updateProfile("nationality", v), "Nationality")}
-                {field("Passport Number", profile.passportNumber, v => updateProfile("passportNumber", v), "Enter passport number")}
-
-                <button style={buttonStyle} onClick={() => setStep(2)}>
-                  Save & Continue →
-                </button>
-              </section>
-            )}
-
-            {step === 2 && (
-              <section style={cardStyle}>
-                <h2 style={headingStyle}>Passport Information</h2>
-                <p style={{ color: "#667085", fontSize: 13, marginBottom: 25 }}>
-                  Upload a clear copy of your passport.
-                </p>
-
-                <div style={{
-                  border: "2px dashed #b9c9df",
-                  background: "#f8fbff",
-                  borderRadius: 12,
-                  padding: 35,
-                  textAlign: "center",
-                }}>
-                  <div style={{ fontSize: 42 }}>📄</div>
-                  <h3 style={{ color: "#253d61" }}>Upload Passport</h3>
-                  <p style={{ color: "#667085", fontSize: 13 }}>
-                    PDF, JPG or PNG files
-                  </p>
-                  <label style={{
-                    display: "inline-block",
-                    background: "#1746a2",
-                    color: "white",
-                    padding: "12px 20px",
-                    borderRadius: 8,
-                    cursor: "pointer",
-                    fontSize: 13,
-                    fontWeight: 700,
-                  }}>
-                    Choose File
-                    <input
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      style={{ display: "none" }}
-                      onChange={e => setPassport(e.target.files?.[0] || null)}
-                    />
-                  </label>
-                  {passport && (
-                    <p style={{ color: "#16804a", fontSize: 13, marginTop: 15 }}>
-                      ✓ {passport.name}
-                    </p>
-                  )}
-                </div>
-
-                <div style={{ display: "flex", gap: 12, marginTop: 25 }}>
-                  <button
-                    style={{ ...buttonStyle, background: "#e9eef5", color: "#344054" }}
-                    onClick={() => setStep(1)}
-                  >
-                    Back
-                  </button>
-                  <button style={buttonStyle} onClick={() => setStep(3)}>
-                    Save & Continue →
-                  </button>
-                </div>
-              </section>
-            )}
-
-            {step === 3 && (
-              <section style={cardStyle}>
-                <h2 style={headingStyle}>Educational History</h2>
-                <p style={{ color: "#667085", fontSize: 13, marginBottom: 25 }}>
-                  Add your academic qualifications.
-                </p>
-
-                {education.map((edu, index) => (
-                  <div key={index} style={{
-                    background: "#f8fafc",
-                    border: "1px solid #e5eaf1",
-                    padding: 18,
-                    borderRadius: 11,
-                    marginBottom: 18,
-                  }}>
-                    <div style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: 16,
-                    }}>
-                      <strong style={{ color: "#1746a2" }}>
-                        Education #{index + 1}
-                      </strong>
-                      {education.length > 1 && (
-                        <button
-                          onClick={() => removeEducation(index)}
-                          style={{
-                            border: 0,
-                            background: "#feecec",
-                            color: "#c0392b",
-                            padding: "7px 10px",
-                            borderRadius: 6,
-                            cursor: "pointer",
-                          }}
-                        >
-                          Remove
-                        </button>
-                      )}
-                    </div>
-
-                    <div style={{
-                      display: "grid",
-                      gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
-                      gap: 12,
-                    }}>
-                      <div>
-                        <label style={labelStyle}>Qualification</label>
-                        <select
-                          style={inputStyle}
-                          value={edu.level}
-                          onChange={e => updateEducation(index, "level", e.target.value)}
-                        >
-                          <option>SSC</option>
-                          <option>HSC</option>
-                          <option>Diploma</option>
-                          <option>Bachelor's</option>
-                          <option>Master's</option>
-                          <option>Other</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label style={labelStyle}>Institution Name</label>
-                        <input
-                          style={inputStyle}
-                          placeholder="School / College / University"
-                          value={edu.institution}
-                          onChange={e => updateEducation(index, "institution", e.target.value)}
-                        />
-                      </div>
-
-                      <div>
-                        <label style={labelStyle}>Group / Subject</label>
-                        <input
-                          style={inputStyle}
-                          placeholder="Science / Business / Arts"
-                          value={edu.group}
-                          onChange={e => updateEducation(index, "group", e.target.value)}
-                        />
-                      </div>
-
-                      <div>
-                        <label style={labelStyle}>Result / CGPA</label>
-                        <input
-                          style={inputStyle}
-                          placeholder="e.g. GPA 5.00"
-                          value={edu.result}
-                          onChange={e => updateEducation(index, "result", e.target.value)}
-                        />
-                      </div>
-
-                      <div>
-                        <label style={labelStyle}>Passing Year</label>
-                        <input
-                          style={inputStyle}
-                          placeholder="e.g. 2024"
-                          value={edu.year}
-                          onChange={e => updateEducation(index, "year", e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
-                <button
-                  onClick={addEducation}
-                  style={{
-                    width: "100%",
-                    padding: 13,
-                    background: "#eff5ff",
-                    border: "1px dashed #8da9d2",
-                    borderRadius: 9,
-                    color: "#1746a2",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    marginBottom: 22,
-                  }}
-                >
-                  + Add Another Qualification
-                </button>
-
-                <div style={{ display: "flex", gap: 12 }}>
-                  <button
-                    style={{ ...buttonStyle, background: "#e9eef5", color: "#344054" }}
-                    onClick={() => setStep(2)}
-                  >
-                    Back
-                  </button>
-                  <button style={buttonStyle} onClick={() => setSaved(true)}>
-                    Submit Profile ✓
-                  </button>
-                </div>
-              </section>
-            )}
-          </>
-        )}
+          <button
+            style={{ ...buttonStyle, marginTop: 15 }}
+            onClick={saveEducation}
+            disabled={busy}
+          >
+            Save Educational History
+          </button>
+        </section>
 
         <p style={{
           textAlign: "center",
-          fontSize: 12,
           color: "#98a2b3",
-          marginTop: 25,
+          fontSize: 12,
+          margin: 30,
         }}>
-          NorthBridge Education · Student Portal Prototype
+          © 2026 NorthBridge Education
         </p>
       </main>
     </div>
