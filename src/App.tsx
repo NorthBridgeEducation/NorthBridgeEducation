@@ -351,7 +351,7 @@ export default function App() {
           textAlign: "center",
           boxSizing: "border-box",
         }}>
-          <h1 style={{ color: "#15345f" }}>NorthBridge</h1>
+          <h1 style={{ color: "#15345f" }}>NorthBridge Edu</h1>
           <p style={{ color: "#667085" }}>
             Student Application Portal
           </p>
