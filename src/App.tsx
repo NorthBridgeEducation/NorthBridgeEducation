@@ -418,7 +418,7 @@ export default function App() {
         flexWrap: "wrap",
         gap: 12,
       }}>
-        <strong style={{ fontSize: 22 }}>NorthBridge</strong>
+        <strong style={{ fontSize: 22 }}>NorthBridge Edu</strong>
         <div>
           <span style={{ fontSize: 13 }}>{user.email}</span>
           <button
