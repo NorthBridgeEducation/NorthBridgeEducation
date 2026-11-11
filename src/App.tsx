@@ -621,7 +621,7 @@ export default function App() {
           fontSize: 12,
           margin: 30,
         }}>
-          © 2025 NorthBridge Education
+          © 2026 NorthBridge Education
         </p>
       </main>
     </div>
