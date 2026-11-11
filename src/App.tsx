@@ -489,7 +489,7 @@ export default function App() {
           marginTop: 22,
           border: "1px solid #e5eaf1",
         }}>
-          <h2>Passport Document</h2>
+          <h2>Passport Documhent</h2>
           <p style={{ color: "#667085", fontSize: 13 }}>
             PDF, JPG or PNG · Maximum 5 MB · Private storage
           </p>
