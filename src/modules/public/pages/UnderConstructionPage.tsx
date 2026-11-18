@@ -41,7 +41,7 @@ export function ComingSoonPage() {
           </Badge>
 
           <h1 className="text-5xl font-semibold leading-[1.1] tracking-tight text-[#122c46] sm:text-6xl lg:text-7xl">
-            Coming soon.
+            Coming soon.....
           </h1>
 
           <p className="mt-5 text-base text-slate-600">
