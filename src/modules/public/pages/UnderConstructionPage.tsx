@@ -13,7 +13,7 @@ function Brand() {
       />
       <div className="leading-tight">
         <p className="text-xl font-bold tracking-tight text-[#122c46]">
-          NBridge
+          NBridge test
         </p>
         <p className="text-[10px] uppercase tracking-[0.18em] text-slate-500">
           Global Education
