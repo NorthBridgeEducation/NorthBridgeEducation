@@ -248,7 +248,7 @@ onChange={(event) => setPassword(event.target.value)}
               <Network className="size-5" />
             </span>
             <span className="text-lg font-semibold tracking-tight">
-              NBridge
+              NBridge test
             </span>
           </div>
 
