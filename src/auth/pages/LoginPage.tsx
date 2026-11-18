@@ -20,13 +20,41 @@ const navigate = useNavigate();
   const { resolvedTheme, setTheme } = useTheme();
   const [showPassword, setShowPassword] = useState(false);
   const [notice, setNotice] = useState("");
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  
+async function handleSubmit(event: FormEvent<HTMLFormElement>) {
   event.preventDefault();
 
-  // Demo login
-  navigate("/app", { replace: true });
+  setLoading(true);
+  setNotice("");
+
+  try {
+    const response = await fetch("/api/admin/login", {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      setNotice(result.message || "Login failed.");
+      return;
+    }
+
+    navigate("/app", { replace: true });
+  } catch {
+    setNotice("Unable to connect to the server. Please try again.");
+  } finally {
+    setLoading(false);
+  }
 }
+
 
   return (
     <main className="min-h-dvh bg-background text-foreground">
@@ -95,6 +123,8 @@ const navigate = useNavigate();
                   id="email"
                   name="email"
                   type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
                   autoComplete="username"
                   placeholder="name@company.com"
                   required
@@ -124,6 +154,8 @@ const navigate = useNavigate();
                   <input
                     id="password"
                     name="password"
+                    value={password}
+onChange={(event) => setPassword(event.target.value)}
                     type={showPassword ? "text" : "password"}
                     autoComplete="current-password"
                     placeholder="Enter your password"
@@ -158,12 +190,15 @@ const navigate = useNavigate();
 
               {/* Submit */}
               <button
-                type="submit"
-                className="group flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-foreground px-4 text-sm font-semibold text-background transition-colors hover:bg-foreground/85"
-              >
-                Sign in
-                <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
-              </button>
+  type="submit"
+  disabled={loading}
+  className="group flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-foreground px-4 text-sm font-semibold text-background transition-colors hover:bg-foreground/85 disabled:cursor-not-allowed disabled:opacity-50"
+>
+  {loading ? "Signing in..." : "Sign in"}
+  {!loading && (
+    <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+  )}
+</button>
 
               {notice && (
                 <p role="status" className="rounded-lg border bg-muted/60 px-3.5 py-3 text-sm text-muted-foreground">
