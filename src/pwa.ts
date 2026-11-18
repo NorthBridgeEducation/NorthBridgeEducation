@@ -1,4 +1,3 @@
-
 import { registerSW } from "virtual:pwa-register"
 
 let updateSW: ((reloadPage?: boolean) => Promise<void>) | undefined
