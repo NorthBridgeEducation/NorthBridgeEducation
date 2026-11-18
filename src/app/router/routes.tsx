@@ -14,6 +14,17 @@ import { FinancePage } from "@/modules/finance/pages/FinancePage";
 import { FilesPage } from "../../modules/files/pages/FilesPage";
 import { OthersPage } from "../../modules/others/pages/OthersPage";
 import { SettingsPage } from "../../modules/settings/pages/SettingsPage";
+
+// Student Portal
+import { StudentLayout } from "@/portal/layouts/StudentLayout";
+import { StudentProtectedRoute } from "@/portal/router/StudentProtectedRoute";
+import { StudentLoginPage } from "@/portal/pages/LoginPage";
+import { DashboardPage as StudentDashboardPage } from "@/portal/pages/DashboardPage";
+import { ProfilePage } from "@/portal/pages/ProfilePage";
+import { ApplicationPage } from "@/portal/pages/ApplicationPage";
+import { DocumentsPage } from "@/portal/pages/DocumentsPage";
+import { PaymentsPage } from "@/portal/pages/PaymentsPage";
+import { NotificationsPage } from "@/portal/pages/NotificationsPage";
 // function ModulePlaceholder({ title }: { title: string }) {
 //   return (
 //     <div className="space-y-2">
@@ -56,6 +67,20 @@ export function AppRoutes() {
           <Route path="files" element={<FilesPage />} />
           <Route path="others" element={<OthersPage />} />
           <Route path="settings" element={<SettingsPage />} />
+        </Route>
+      </Route>
+      {/* Student authentication */}
+      <Route path="/portal/login" element={<StudentLoginPage />} />
+
+      {/* Student application */}
+      <Route element={<StudentProtectedRoute />}>
+        <Route path="/portal" element={<StudentLayout />}>
+          <Route index element={<StudentDashboardPage />} />
+          <Route path="profile" element={<ProfilePage />} />
+          <Route path="application" element={<ApplicationPage />} />
+          <Route path="documents" element={<DocumentsPage />} />
+          <Route path="payments" element={<PaymentsPage />} />
+          <Route path="notifications" element={<NotificationsPage />} />
         </Route>
       </Route>
 
