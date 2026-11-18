@@ -1,5 +1,10 @@
-import { useEffect,useMemo, useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { useCandidates } from "../hooks/useCandidates";
+import type {
+  Candidate,
+  CandidateStatus,
+} from "../hooks/useCandidates";
 import {
   Users,
   // UserRoundPlus,
@@ -24,69 +29,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-type CandidateStatus =
-  | "In Review"
-  | "Documents Pending"
-  | "Offer Received"
-  | "Completed";
-
-type Candidate = {
-  id: string;
-  name: string;
-  email: string;
-  country: string;
-  education: string;
-  status: CandidateStatus;
-  applied: string;
-};
-
-const initialCandidates: Candidate[] = [
-  {
-    id: "NB-2026-001",
-    name: "Ahmed Rahman",
-    email: "ahmed@example.com",
-    country: "United Kingdom",
-    education: "Bachelor's",
-    status: "In Review",
-    applied: "Nov 08, 2026",
-  },
-  {
-    id: "NB-2026-002",
-    name: "Nusrat Jahan",
-    email: "nusrat@example.com",
-    country: "Canada",
-    education: "Master's",
-    status: "Documents Pending",
-    applied: "Nov 07, 2026",
-  },
-  {
-    id: "NB-2026-003",
-    name: "Tanvir Hasan",
-    email: "tanvir@example.com",
-    country: "Australia",
-    education: "Bachelor's",
-    status: "Offer Received",
-    applied: "Nov 06, 2026",
-  },
-  {
-    id: "NB-2026-004",
-    name: "Sadia Islam",
-    email: "sadia@example.com",
-    country: "Japan",
-    education: "Diploma",
-    status: "Completed",
-    applied: "Nov 05, 2026",
-  },
-  {
-    id: "NB-2026-005",
-    name: "Rakib Hossain",
-    email: "rakib@example.com",
-    country: "Germany",
-    education: "Bachelor's",
-    status: "In Review",
-    applied: "Nov 04, 2026",
-  },
-];
 
 const filters = [
   "All",
@@ -155,22 +97,18 @@ function StatCard({
 export function CandidatePage() {
   const navigate = useNavigate();
 
-const [candidates, setCandidates] = useState<Candidate[]>(() => {
-  try {
-    const saved = localStorage.getItem("nbridge_candidates");
-    return saved ? JSON.parse(saved) as Candidate[] : initialCandidates;
-  } catch {
-    return initialCandidates;
-  }
-});
-
-useEffect(() => {
-  localStorage.setItem("nbridge_candidates", JSON.stringify(candidates));
-}, [candidates]);
+  const {
+    candidates,
+    loading,
+    error,
+    createCandidate,
+    refreshCandidates,
+  } = useCandidates();
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState<Filter>("All");
   const [showForm, setShowForm] = useState(false);
-
+const [creating, setCreating] = useState(false);
+const [formError, setFormError] = useState("");
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -178,24 +116,25 @@ useEffect(() => {
     education: "",
   });
 
-  const filteredCandidates = useMemo(() => {
-    const query = search.toLowerCase().trim();
+ const filteredCandidates = useMemo(() => {
+  const query = search.toLowerCase().trim();
 
-    return candidates.filter((candidate) => {
-      const matchesSearch =
-        !query ||
-        candidate.name.toLowerCase().includes(query) ||
-        candidate.email.toLowerCase().includes(query) ||
-        candidate.id.toLowerCase().includes(query) ||
-        candidate.country.toLowerCase().includes(query);
+  return candidates.filter((candidate) => {
+    const matchesSearch =
+      !query ||
+      candidate.name.toLowerCase().includes(query) ||
+      candidate.email.toLowerCase().includes(query) ||
+      candidate.candidateCode.toLowerCase().includes(query) ||
+      candidate.country.toLowerCase().includes(query) ||
+      candidate.phone.toLowerCase().includes(query);
 
-      const matchesStatus =
-        activeFilter === "All" || candidate.status === activeFilter;
+    const matchesStatus =
+      activeFilter === "All" ||
+      candidate.status === activeFilter;
 
-      return matchesSearch && matchesStatus;
-    });
-  }, [candidates, search, activeFilter]);
-
+    return matchesSearch && matchesStatus;
+  });
+}, [candidates, search, activeFilter]);
   const stats = {
     total: candidates.length,
     review: candidates.filter((c) => c.status === "In Review").length,
@@ -203,29 +142,40 @@ useEffect(() => {
     completed: candidates.filter((c) => c.status === "Completed").length,
   };
 
-  function handleAddCandidate(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleAddCandidate(
+  event: FormEvent<HTMLFormElement>
+) {
+  event.preventDefault();
 
-    const newCandidate: Candidate = {
-      id: `NB-2026-${String(candidates.length + 1).padStart(3, "0")}`,
+  setCreating(true);
+  setFormError("");
+
+  try {
+    await createCandidate({
       name: form.name,
       email: form.email,
-      country: form.country,
-      education: form.education,
-      status: "In Review",
-      applied: new Date().toLocaleDateString("en-US", {
-        month: "short",
-        day: "2-digit",
-        year: "numeric",
-      }),
-    };
+    });
 
-    setCandidates((prev) => [newCandidate, ...prev]);
-    setForm({ name: "", email: "", country: "", education: "" });
+    setForm({
+      name: "",
+      email: "",
+      country: "",
+      education: "",
+    });
+
     setShowForm(false);
     setActiveFilter("All");
     setSearch("");
+  } catch (err) {
+    setFormError(
+      err instanceof Error
+        ? err.message
+        : "Failed to create candidate."
+    );
+  } finally {
+    setCreating(false);
   }
+}
 
   return (
     <div className="space-y-6">
@@ -325,10 +275,10 @@ useEffect(() => {
                 >
                   Cancel
                 </Button>
-                <Button type="submit">
-                  <Plus />
-                  Create Candidate
-                </Button>
+                <Button type="submit" disabled={creating}>
+  <Plus />
+  {creating ? "Creating..." : "Create Candidate"}
+</Button>
               </div>
             </form>
           </CardContent>
@@ -423,7 +373,22 @@ useEffect(() => {
               </thead>
 
               <tbody className="divide-y">
-                {filteredCandidates.map((candidate) => (
+                {loading && (
+  <tr>
+    <td colSpan={7} className="px-5 py-12 text-center text-muted-foreground">
+      Loading candidates...
+    </td>
+  </tr>
+)}
+
+{!loading && error && (
+  <tr>
+    <td colSpan={7} className="px-5 py-12 text-center text-destructive">
+      {error}
+    </td>
+  </tr>
+)}
+                {!loading && !error && filteredCandidates.map((candidate) => (
                   <tr
                     key={candidate.id}
                     className="transition-colors hover:bg-muted/30"
@@ -452,8 +417,8 @@ useEffect(() => {
                     </td>
 
                     <td className="px-4 py-3.5 font-mono text-xs text-muted-foreground">
-                      {candidate.id}
-                    </td>
+  {candidate.candidateCode}
+</td>
 
                     <td className="px-4 py-3.5">{candidate.country}</td>
 
@@ -486,7 +451,7 @@ useEffect(() => {
                   </tr>
                 ))}
 
-                {filteredCandidates.length === 0 && (
+                {!loading && !error && filteredCandidates.length === 0 && (
                   <tr>
                     <td colSpan={7} className="px-5 py-16 text-center">
                       <div className="mx-auto flex size-11 items-center justify-center rounded-full bg-muted">
