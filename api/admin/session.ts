@@ -1,6 +1,5 @@
-
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { isAdminAuthenticated } from "./_lib/session";
+import { isAdminAuthenticated } from "./_lib/session.js";
 
 export default function handler(
   req: VercelRequest,
