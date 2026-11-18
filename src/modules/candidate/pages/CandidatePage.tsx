@@ -1,4 +1,5 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect,useMemo, useState, type FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Users,
   // UserRoundPlus,
@@ -152,7 +153,20 @@ function StatCard({
 }
 
 export function CandidatePage() {
-  const [candidates, setCandidates] = useState(initialCandidates);
+  const navigate = useNavigate();
+
+const [candidates, setCandidates] = useState<Candidate[]>(() => {
+  try {
+    const saved = localStorage.getItem("nbridge_candidates");
+    return saved ? JSON.parse(saved) as Candidate[] : initialCandidates;
+  } catch {
+    return initialCandidates;
+  }
+});
+
+useEffect(() => {
+  localStorage.setItem("nbridge_candidates", JSON.stringify(candidates));
+}, [candidates]);
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState<Filter>("All");
   const [showForm, setShowForm] = useState(false);
@@ -421,9 +435,15 @@ export function CandidatePage() {
                         </div>
 
                         <div className="min-w-0">
-                          <p className="truncate font-medium">
-                            {candidate.name}
-                          </p>
+                          <button
+  type="button"
+  onClick={() =>
+    navigate(`/app/candidate/${candidate.id}`)
+  }
+  className="truncate text-left font-medium hover:text-primary hover:underline"
+>
+  {candidate.name}
+</button>
                           <p className="truncate text-xs text-muted-foreground">
                             {candidate.email}
                           </p>
@@ -451,14 +471,17 @@ export function CandidatePage() {
 
                     <td className="px-5 py-3.5 text-right">
                       <Button
-                        variant="ghost"
-                        size="icon"
-                        className="size-8"
-                        aria-label={`View ${candidate.name}`}
-                        title="Candidate details"
-                      >
-                        <ArrowUpRight className="size-4" />
-                      </Button>
+  variant="ghost"
+  size="icon"
+  className="size-8"
+  aria-label={`View ${candidate.name}`}
+  title="Candidate details"
+  onClick={() =>
+    navigate(`/app/candidate/${candidate.id}`)
+  }
+>
+  <ArrowUpRight className="size-4" />
+</Button>
                     </td>
                   </tr>
                 ))}

@@ -14,7 +14,7 @@ import { FinancePage } from "@/modules/finance/pages/FinancePage";
 import { FilesPage } from "../../modules/files/pages/FilesPage";
 import { OthersPage } from "../../modules/others/pages/OthersPage";
 import { SettingsPage } from "../../modules/settings/pages/SettingsPage";
-
+import { CandidateProfilePage } from "@/modules/candidate/pages/CandidateProfilePage";
 // Student Portal
 import { StudentLayout } from "@/portal/layouts/StudentLayout";
 import { StudentProtectedRoute } from "@/portal/router/StudentProtectedRoute";
@@ -63,6 +63,10 @@ export function AppRoutes() {
           <Route index element={<DashboardPage />} />
           <Route path="lead" element={<LeadPage />} />
           <Route path="candidate" element={<CandidatePage />} />
+          <Route
+  path="candidate/:candidateId"
+  element={<CandidateProfilePage />}
+/>
           <Route path="finance" element={<FinancePage />} />
           <Route path="files" element={<FilesPage />} />
           <Route path="others" element={<OthersPage />} />
