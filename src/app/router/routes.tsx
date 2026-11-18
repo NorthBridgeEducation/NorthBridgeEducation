@@ -6,7 +6,8 @@ import { ProtectedRoute } from "./ProtectedRoute";
 import { LoginPage } from "../../auth/pages/LoginPage";
 import { DashboardPage } from "@/modules/dashboard/pages/DashboardPage";
 import { PublicLeadPage } from "@/modules/lead/pages/PublicLeadPage";
-import { PublicLandingPage } from "@/modules/public/pages/PublicLandingPage";
+// import { PublicLandingPage } from "@/modules/public/pages/PublicLandingPage";
+import { ComingSoonPage } from "@/modules/public/pages/UnderConstructionPage";
 import { CandidatePage } from "@/modules/candidate/pages/CandidatePage";
 import { LeadPage } from "@/modules/lead/pages/LeadPage";
 import { FinancePage } from "@/modules/finance/pages/FinancePage";
@@ -43,7 +44,8 @@ export function AppRoutes() {
       </Route>
       {/* Public pages - no authentication required */}
       <Route path="/get-started" element={<PublicLeadPage />} />
-      <Route path="/" element={<PublicLandingPage />} />
+      {/* <Route path="/" element={<PublicLandingPage />} /> */}
+      <Route path="/" element={<ComingSoonPage/>} />
       {/* Protected application */}
       <Route element={<ProtectedRoute />}>
         <Route path="/app" element={<DashboardLayout />}>
