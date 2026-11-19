@@ -23,7 +23,6 @@ import { CandidateEducationTestPage } from "@/modules/candidate/pages/CandidateE
 import { StudentLayout } from "@/portal/layouts/StudentLayout";
 import { StudentProtectedRoute } from "@/portal/router/StudentProtectedRoute";
 import { StudentLoginPage } from "@/portal/pages/LoginPage";
-import { DashboardPage as StudentDashboardPage } from "@/portal/pages/DashboardPage";
 import { ProfilePage } from "@/portal/pages/ProfilePage";
 import { ApplicationPage } from "@/portal/pages/ApplicationPage";
 import { DocumentsPage } from "@/portal/pages/DocumentsPage";
@@ -91,8 +90,7 @@ export function AppRoutes() {
       {/* Student application */}
       <Route element={<StudentProtectedRoute />}>
         <Route path="/portal" element={<StudentLayout />}>
-          <Route index element={<StudentDashboardPage />} />
-          <Route path="profile" element={<ProfilePage />} />
+          <Route index element={<ProfilePage />} />
           <Route path="application" element={<ApplicationPage />} />
           <Route path="documents" element={<DocumentsPage />} />
           <Route path="payments" element={<PaymentsPage />} />
