@@ -1,7 +1,6 @@
 
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard,
   UserRound,
   FileText,
   FolderOpen,
@@ -13,7 +12,6 @@ import {
 import { supabase } from "@/lib/supabase/client";
 
 const navigation = [
-  { title: "Dashboard", path: "/portal", icon: LayoutDashboard, end: true },
   { title: "My Profile", path: "/portal/profile", icon: UserRound },
   { title: "Application", path: "/portal/application", icon: FileText },
   { title: "Documents", path: "/portal/documents", icon: FolderOpen },
