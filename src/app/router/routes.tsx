@@ -15,6 +15,9 @@ import { FilesPage } from "../../modules/files/pages/FilesPage";
 import { OthersPage } from "../../modules/others/pages/OthersPage";
 import { SettingsPage } from "../../modules/settings/pages/SettingsPage";
 import { CandidateProfilePage } from "@/modules/candidate/pages/CandidateProfilePage";
+
+// testing
+import { CandidateDatabaseTestPage } from "@/modules/candidate/pages/CandidateDatabaseTestPage";
 // Student Portal
 import { StudentLayout } from "@/portal/layouts/StudentLayout";
 import { StudentProtectedRoute } from "@/portal/router/StudentProtectedRoute";
@@ -64,9 +67,13 @@ export function AppRoutes() {
           <Route path="lead" element={<LeadPage />} />
           <Route path="candidate" element={<CandidatePage />} />
           <Route
-  path="candidate/:candidateId"
-  element={<CandidateProfilePage />}
-/>
+             path="candidate/:candidateId"
+             element={<CandidateProfilePage />}
+          />
+          <Route
+            path="candidate-database-test"
+            element={<CandidateDatabaseTestPage />}
+          />
           <Route path="finance" element={<FinancePage />} />
           <Route path="files" element={<FilesPage />} />
           <Route path="others" element={<OthersPage />} />

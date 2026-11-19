@@ -7,6 +7,7 @@ import {
   Folder,
   Layers,
   Settings,
+  Database,
   type LucideIcon,
 } from "lucide-react";
 
@@ -33,6 +34,11 @@ const navigationItems: NavigationItem[] = [
     title: "Candidate",
     path: "/app/candidate",
     icon: UserRound,
+  },
+  {
+  title: "Candidate DB Test",
+  path: "/app/candidate-database-test",
+  icon: Database,
   },
   {
     title: "Finance",
