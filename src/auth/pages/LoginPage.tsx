@@ -1,5 +1,5 @@
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useTheme } from "next-themes";
 import { useNavigate } from "react-router-dom";
 import {
@@ -16,7 +16,7 @@ import {
 export function LoginPage() {
     
 const navigate = useNavigate();
-
+  const [checkingSession, setCheckingSession] = useState(true);
   const { resolvedTheme, setTheme } = useTheme();
   const [showPassword, setShowPassword] = useState(false);
   const [notice, setNotice] = useState("");
@@ -54,8 +54,45 @@ async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     setLoading(false);
   }
 }
+useEffect(() => {
+  let mounted = true;
 
+  async function checkAdminSession() {
+    try {
+      const response = await fetch("/api/admin/session", {
+        method: "GET",
+        credentials: "include",
+        cache: "no-store",
+      });
 
+      if (!mounted) return;
+
+      if (response.ok) {
+        navigate("/app", { replace: true });
+        return;
+      }
+    } catch (error) {
+      console.error("Admin session check failed:", error);
+    }
+
+    if (mounted) {
+      setCheckingSession(false);
+    }
+  }
+
+  void checkAdminSession();
+
+  return () => {
+    mounted = false;
+  };
+}, [navigate]);
+if (checkingSession) {
+  return (
+    <div className="flex min-h-dvh items-center justify-center">
+      <div className="size-7 animate-spin rounded-full border-2 border-current border-t-transparent" />
+    </div>
+  );
+}
   return (
     <main className="min-h-dvh bg-background text-foreground">
       <div className="grid min-h-dvh lg:grid-cols-[1fr_0.9fr]">
