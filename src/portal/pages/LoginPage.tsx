@@ -1,28 +1,55 @@
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Network, LockKeyhole } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 
 export function StudentLoginPage() {
   const navigate = useNavigate();
-
+  const [checkingSession, setCheckingSession] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
+  useEffect(() => {
+  let mounted = true;
 
+  async function checkStudentSession() {
+    try {
+      const { data, error } = await supabase.auth.getSession();
+
+      if (!mounted) return;
+
+      if (!error && data.session) {
+        navigate("/portal", { replace: true });
+        return;
+      }
+    } catch (error) {
+      console.error("Student session check failed:", error);
+    }
+
+    if (mounted) {
+      setCheckingSession(false);
+    }
+  }
+
+  void checkStudentSession();
+
+  return () => {
+    mounted = false;
+  };
+}, [navigate]);
   async function handleGoogleSignIn() {
     setGoogleLoading(true);
     setError("");
 
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/portal`,
-      },
-    });
+  provider: "google",
+  options: {
+    redirectTo: `${window.location.origin}/portal`,
+  },
+});
 
     if (error) {
       setError(error.message);
@@ -50,7 +77,13 @@ export function StudentLoginPage() {
 
     navigate("/portal", { replace: true });
   }
-
+if (checkingSession) {
+  return (
+    <div className="flex min-h-dvh items-center justify-center">
+      <div className="size-7 animate-spin rounded-full border-2 border-current border-t-transparent" />
+    </div>
+  );
+}
   return (
     <main className="flex min-h-dvh items-center justify-center bg-background px-5 py-10 text-foreground">
       <div className="w-full max-w-[420px]">
