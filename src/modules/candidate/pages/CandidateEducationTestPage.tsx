@@ -1,6 +1,12 @@
 
-import { useEffect, useState, type FormEvent } from "react";
-import { GraduationCap, CheckCircle2 } from "lucide-react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
+import {
+  GraduationCap,
+  CheckCircle2,
+  RefreshCw,
+  BookOpen,
+} from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -19,6 +25,19 @@ type Candidate = {
   email: string | null;
 };
 
+type Education = {
+  id: string;
+  candidate_id: string;
+  qualification: string;
+  board: string | null;
+  institution_name: string | null;
+  group_major: string | null;
+  passing_year: number | null;
+  grading_scale: string | null;
+  obtained_mark: string | number | null;
+  created_at?: string;
+};
+
 const initialForm = {
   candidate_id: "",
   qualification: "",
@@ -33,9 +52,14 @@ const initialForm = {
 export function CandidateEducationTestPage() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [form, setForm] = useState(initialForm);
+  const [educationList, setEducationList] = useState<Education[]>([]);
+
   const [loading, setLoading] = useState(true);
+  const [loadingEducation, setLoadingEducation] = useState(false);
   const [saving, setSaving] = useState(false);
+
   const [error, setError] = useState("");
+  const [listError, setListError] = useState("");
   const [success, setSuccess] = useState("");
 
   useEffect(() => {
@@ -47,19 +71,26 @@ export function CandidateEducationTestPage() {
 
         const result = await response.json();
 
-        if (!response.ok) throw new Error(result.message);
+        if (!response.ok) {
+          throw new Error(result.message || "Could not load candidates.");
+        }
 
         const rows = result.candidates ?? [];
+
         setCandidates(rows);
 
         if (rows.length) {
           setForm((old) => ({
             ...old,
-            candidate_id: rows[0].id,
+            candidate_id: old.candidate_id || rows[0].id,
           }));
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Could not load candidates.");
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Could not load candidates.",
+        );
       } finally {
         setLoading(false);
       }
@@ -67,6 +98,49 @@ export function CandidateEducationTestPage() {
 
     void loadCandidates();
   }, []);
+
+  const loadEducation = useCallback(async (candidateId: string) => {
+    if (!candidateId) {
+      setEducationList([]);
+      return;
+    }
+
+    setLoadingEducation(true);
+    setListError("");
+
+    try {
+      const response = await fetch(
+        `/api/admin/candidate-education?candidate_id=${encodeURIComponent(candidateId)}`,
+        {
+          credentials: "include",
+        },
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Could not load education.");
+      }
+
+      setEducationList(result.education ?? []);
+    } catch (err) {
+      setListError(
+        err instanceof Error
+          ? err.message
+          : "Could not load education records.",
+      );
+    } finally {
+      setLoadingEducation(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (form.candidate_id) {
+      void loadEducation(form.candidate_id);
+    } else {
+      setEducationList([]);
+    }
+  }, [form.candidate_id, loadEducation]);
 
   function update(key: keyof typeof initialForm, value: string) {
     setForm((old) => ({ ...old, [key]: value }));
@@ -76,6 +150,7 @@ export function CandidateEducationTestPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
     setSaving(true);
     setError("");
     setSuccess("");
@@ -102,15 +177,24 @@ export function CandidateEducationTestPage() {
         ...initialForm,
         candidate_id: old.candidate_id,
       }));
+
+      await loadEducation(form.candidate_id);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Save failed.");
+      setError(
+        err instanceof Error ? err.message : "Save failed.",
+      );
     } finally {
       setSaving(false);
     }
   }
 
+  const selectedCandidate = candidates.find(
+    (candidate) => candidate.id === form.candidate_id,
+  );
+
   return (
     <div className="mx-auto max-w-5xl space-y-6">
+      {/* Page Heading */}
       <div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <GraduationCap className="size-4" />
@@ -122,10 +206,11 @@ export function CandidateEducationTestPage() {
         </h1>
 
         <p className="mt-1 text-sm text-muted-foreground">
-          Test education records using the Supabase database.
+          Manage candidate academic history.
         </p>
       </div>
 
+      {/* Education Form */}
       <Card className="shadow-none">
         <CardHeader>
           <CardTitle>Education Information</CardTitle>
@@ -144,7 +229,9 @@ export function CandidateEducationTestPage() {
               <select
                 required
                 value={form.candidate_id}
-                onChange={(e) => update("candidate_id", e.target.value)}
+                onChange={(e) =>
+                  update("candidate_id", e.target.value)
+                }
                 disabled={loading || candidates.length === 0}
                 className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
               >
@@ -163,13 +250,29 @@ export function CandidateEducationTestPage() {
               </select>
             </div>
 
+            {selectedCandidate && (
+              <div className="rounded-md border bg-muted/30 p-3 text-sm">
+                <p className="font-medium">
+                  {selectedCandidate.first_name}{" "}
+                  {selectedCandidate.last_name ?? ""}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {selectedCandidate.email || "No email"}
+                </p>
+              </div>
+            )}
+
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Qualification *</label>
+                <label className="text-sm font-medium">
+                  Qualification *
+                </label>
                 <Input
                   required
                   value={form.qualification}
-                  onChange={(e) => update("qualification", e.target.value)}
+                  onChange={(e) =>
+                    update("qualification", e.target.value)
+                  }
                   placeholder="e.g. HSC"
                 />
               </div>
@@ -178,53 +281,75 @@ export function CandidateEducationTestPage() {
                 <label className="text-sm font-medium">Board</label>
                 <Input
                   value={form.board}
-                  onChange={(e) => update("board", e.target.value)}
+                  onChange={(e) =>
+                    update("board", e.target.value)
+                  }
                   placeholder="e.g. Dhaka Board"
                 />
               </div>
 
               <div className="space-y-2 sm:col-span-2">
-                <label className="text-sm font-medium">Institution Name</label>
+                <label className="text-sm font-medium">
+                  Institution Name
+                </label>
                 <Input
                   value={form.institution_name}
-                  onChange={(e) => update("institution_name", e.target.value)}
+                  onChange={(e) =>
+                    update("institution_name", e.target.value)
+                  }
                   placeholder="School / College / University"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Group / Major</label>
+                <label className="text-sm font-medium">
+                  Group / Major
+                </label>
                 <Input
                   value={form.group_major}
-                  onChange={(e) => update("group_major", e.target.value)}
+                  onChange={(e) =>
+                    update("group_major", e.target.value)
+                  }
                   placeholder="Science / Business / CSE"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Passing Year</label>
+                <label className="text-sm font-medium">
+                  Passing Year
+                </label>
                 <Input
                   type="number"
                   value={form.passing_year}
-                  onChange={(e) => update("passing_year", e.target.value)}
+                  onChange={(e) =>
+                    update("passing_year", e.target.value)
+                  }
                   placeholder="2024"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Grading Scale</label>
+                <label className="text-sm font-medium">
+                  Grading Scale
+                </label>
                 <Input
                   value={form.grading_scale}
-                  onChange={(e) => update("grading_scale", e.target.value)}
+                  onChange={(e) =>
+                    update("grading_scale", e.target.value)
+                  }
                   placeholder="GPA 5.00"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Obtained Mark / GPA</label>
+                <label className="text-sm font-medium">
+                  Obtained Mark / GPA
+                </label>
                 <Input
                   value={form.obtained_mark}
-                  onChange={(e) => update("obtained_mark", e.target.value)}
+                  onChange={(e) =>
+                    update("obtained_mark", e.target.value)
+                  }
                   placeholder="4.83"
                 />
               </div>
@@ -245,11 +370,114 @@ export function CandidateEducationTestPage() {
 
             <Button
               type="submit"
-              disabled={saving || loading || candidates.length === 0}
+              disabled={
+                saving ||
+                loading ||
+                candidates.length === 0 ||
+                !form.candidate_id
+              }
             >
               {saving ? "Saving..." : "Save Education"}
             </Button>
           </form>
+        </CardContent>
+      </Card>
+
+      {/* Education List */}
+      <Card className="shadow-none">
+        <CardHeader className="flex flex-row items-center justify-between gap-3">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <BookOpen className="size-5" />
+              Education History
+            </CardTitle>
+            <CardDescription>
+              Saved academic records for the selected candidate.
+            </CardDescription>
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => void loadEducation(form.candidate_id)}
+            disabled={loadingEducation || !form.candidate_id}
+          >
+            <RefreshCw
+              className={`size-4 ${loadingEducation ? "animate-spin" : ""}`}
+            />
+            Refresh
+          </Button>
+        </CardHeader>
+
+        <CardContent>
+          {loadingEducation ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              Loading education records...
+            </p>
+          ) : listError ? (
+            <p className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+              {listError}
+            </p>
+          ) : educationList.length === 0 ? (
+            <div className="py-10 text-center">
+              <GraduationCap className="mx-auto size-9 text-muted-foreground" />
+              <p className="mt-3 font-medium">
+                No Education Records
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                No education history has been added for this candidate yet.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {educationList.map((education, index) => (
+                <div
+                  key={education.id}
+                  className="rounded-lg border p-4"
+                >
+                  <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-start">
+                    <div>
+                      <p className="font-semibold">
+                        {index + 1}. {education.qualification}
+                      </p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {education.institution_name || "Institution not provided"}
+                      </p>
+                    </div>
+
+                    {education.passing_year && (
+                      <span className="rounded-md bg-muted px-2.5 py-1 text-xs font-medium">
+                        {education.passing_year}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Board</p>
+                      <p>{education.board || "—"}</p>
+                    </div>
+
+                    <div>
+                      <p className="text-xs text-muted-foreground">Group / Major</p>
+                      <p>{education.group_major || "—"}</p>
+                    </div>
+
+                    <div>
+                      <p className="text-xs text-muted-foreground">Grading Scale</p>
+                      <p>{education.grading_scale || "—"}</p>
+                    </div>
+
+                    <div>
+                      <p className="text-xs text-muted-foreground">Obtained Mark / GPA</p>
+                      <p>{education.obtained_mark ?? "—"}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
