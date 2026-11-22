@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
-
+import { Link } from "react-router-dom";
 type Candidate = {
   id: string;
   candidate_code: string | null;
@@ -360,13 +360,28 @@ export function ProfilePage() {
             </div>
           </>
         ) : (
-          <div className="rounded-lg border border-dashed p-6">
-            <p className="font-medium">Candidate profile not found</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Your Supabase Auth account is not linked to a candidate record.
-              Please contact the administrator.
-            </p>
-          </div>
+          
+<div className="rounded-xl border border-dashed p-6 space-y-3">
+  <div>
+    <h3 className="font-semibold text-lg">
+      Welcome to NorthBridge Education
+    </h3>
+
+    <p className="mt-1 text-sm text-muted-foreground">
+      You do not have a candidate profile yet.
+      Your personal information will appear here
+      once you become a registered candidate.
+    </p>
+  </div>
+
+  <Link
+    to="/portal/application"
+    className="inline-flex rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90"
+  >
+    Apply to Become a Candidate
+  </Link>
+</div>
+
         )}
       </section>
 
@@ -381,15 +396,11 @@ export function ProfilePage() {
           </p>
         </div>
 
-        {candidate && education.length === 0 && (
-          <div className="rounded-xl border border-dashed p-6">
-            <p className="font-medium">No education records found</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Your SSC and HSC information will appear here when records
-              are linked to your candidate profile.
-            </p>
-          </div>
-        )}
+        {candidate && (
+  <section className="max-w-3xl space-y-4">
+    {/* Existing Educational Information section */}
+  </section>
+)}
 
         {education.map((record) => {
           const isEditing = editingId === record.id;
