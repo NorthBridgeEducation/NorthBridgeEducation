@@ -1,6 +1,7 @@
 
 import { useMemo, useState } from "react";
 import {
+  Globe2,
   Activity,
   Bell,
   CheckCircle2,
@@ -17,7 +18,7 @@ import {
   CircleAlert,
   Megaphone,
 } from "lucide-react";
-
+import { CatalogManager } from "../components/CatalogManager";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -442,6 +443,10 @@ export function OthersPage() {
         <CardContent>
           <Tabs defaultValue="tasks" className="space-y-5">
             <TabsList className="h-auto flex-wrap">
+              <TabsTrigger value="catalog" className="gap-2">
+  <Globe2 className="size-4" />
+  Countries & Universities
+</TabsTrigger>
               <TabsTrigger value="tasks" className="gap-2">
                 <ListTodo className="size-4" />
                 Tasks
@@ -583,7 +588,9 @@ export function OthersPage() {
                 )}
               </div>
             </TabsContent>
-
+                <TabsContent value="catalog" className="space-y-4">
+  <CatalogManager />
+</TabsContent>
             {/* Activity Log */}
             <TabsContent value="activity" className="space-y-4">
               <div>
