@@ -17,6 +17,7 @@ import { SettingsPage } from "../../modules/settings/pages/SettingsPage";
 import { CandidateProfilePage } from "@/modules/candidate/pages/CandidateProfilePage";
 
 // testing
+import { DraftPage } from "@/modules/candidate/pages/DraftPage";
 import { CandidateDatabaseTestPage } from "@/modules/candidate/pages/CandidateDatabaseTestPage";
 import { CandidateEducationTestPage } from "@/modules/candidate/pages/CandidateEducationTestPage";
 import { CandidateLanguageTestsPage } from "@/modules/candidate/pages/CandidateLanguageTestsPage";
@@ -67,6 +68,7 @@ export function AppRoutes() {
         <Route path="/app" element={<DashboardLayout />}>
           <Route index element={<DashboardPage />} />
           <Route path="lead" element={<LeadPage />} />
+          <Route path="drafts" element={<DraftPage />} />
           <Route path="candidate" element={<CandidatePage />} />
           <Route
              path="candidate/:candidateId"

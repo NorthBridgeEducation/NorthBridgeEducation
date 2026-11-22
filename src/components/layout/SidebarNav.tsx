@@ -10,6 +10,7 @@ import {
   Database,
   GraduationCap,
   Languages,
+  ClipboardList,
   type LucideIcon,
 } from "lucide-react";
 
@@ -32,6 +33,11 @@ const navigationItems: NavigationItem[] = [
     path: "/app/lead",
     icon: Users,
   },
+  {
+  title: "Draft Applications",
+  path: "/app/drafts",
+  icon: ClipboardList,
+},
   {
     title: "Candidate",
     path: "/app/candidate",
