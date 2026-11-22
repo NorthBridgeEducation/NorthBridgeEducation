@@ -2,6 +2,7 @@
 import { useMemo, useState } from "react";
 import {
   Globe2,
+  GraduationCap,
   Activity,
   Bell,
   CheckCircle2,
@@ -19,6 +20,7 @@ import {
   Megaphone,
 } from "lucide-react";
 import { CatalogManager } from "../components/CatalogManager";
+import { ProgramsManager } from "../components/ProgramsManager";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -447,6 +449,10 @@ export function OthersPage() {
   <Globe2 className="size-4" />
   Countries & Universities
 </TabsTrigger>
+<TabsTrigger value="programs" className="gap-2">
+  <GraduationCap className="size-4" />
+  Programs
+</TabsTrigger>
               <TabsTrigger value="tasks" className="gap-2">
                 <ListTodo className="size-4" />
                 Tasks
@@ -590,6 +596,9 @@ export function OthersPage() {
             </TabsContent>
                 <TabsContent value="catalog" className="space-y-4">
   <CatalogManager />
+</TabsContent>
+<TabsContent value="programs" className="space-y-4">
+  <ProgramsManager />
 </TabsContent>
             {/* Activity Log */}
             <TabsContent value="activity" className="space-y-4">
