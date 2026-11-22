@@ -295,7 +295,7 @@ export function ProfilePage() {
       <section className="max-w-3xl space-y-5 rounded-xl border bg-card p-6">
         <div>
           <h2 className="text-lg font-semibold">
-            Personal Information
+            Passport Information
           </h2>
           <p className="text-sm text-muted-foreground">
             Your registered candidate information
