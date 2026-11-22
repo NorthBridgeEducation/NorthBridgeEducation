@@ -1,7 +1,6 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { Link } from "react-router-dom";
 type Candidate = {
   id: string;
   candidate_code: string | null;
@@ -41,6 +40,223 @@ const emptyForm: EducationForm = {
   obtained_mark: "",
 };
 
+type ApplicationForm = {
+  given_name: string;
+  surname: string;
+  date_of_birth: string;
+  number: string;
+  passport_number: string;
+  gender: string;
+  nid_number: string;
+  passport_date_of_issue: string;
+  passport_date_of_expiry: string;
+  place_birth: string;
+  fathers_name: string;
+  mothers_name: string;
+  permanent_address: string;
+};
+
+const emptyApplicationForm: ApplicationForm = {
+  given_name: "",
+  surname: "",
+  date_of_birth: "",
+  number: "",
+  passport_number: "",
+  gender: "",
+  nid_number: "",
+  passport_date_of_issue: "",
+  passport_date_of_expiry: "",
+  place_birth: "",
+  fathers_name: "",
+  mothers_name: "",
+  permanent_address: "",
+};
+
+function CandidateApplicationForm() {
+  const [form, setForm] = useState<ApplicationForm>(emptyApplicationForm);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function loadDraft() {
+      const { data: { user }, error: authError } =
+        await supabase.auth.getUser();
+
+      if (authError || !user) {
+        setError("Please log in again.");
+        setLoading(false);
+        return;
+      }
+
+      const { data, error: draftError } = await supabase
+        .from("draft")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (draftError) {
+        setError(draftError.message);
+      } else if (data) {
+        setForm({
+          given_name: data.given_name || "",
+          surname: data.surname || "",
+          date_of_birth: data.date_of_birth || "",
+          number: data.number || "",
+          passport_number: data.passport_number || "",
+          gender: data.gender || "",
+          nid_number: data.nid_number || "",
+          passport_date_of_issue: data.passport_date_of_issue || "",
+          passport_date_of_expiry: data.passport_date_of_expiry || "",
+          place_birth: data.place_birth || "",
+          fathers_name: data.fathers_name || "",
+          mothers_name: data.mothers_name || "",
+          permanent_address: data.permanent_address || "",
+        });
+      }
+
+      setLoading(false);
+    }
+
+    void loadDraft();
+  }, []);
+
+  function updateField(field: keyof ApplicationForm, value: string) {
+    setForm((previous) => ({ ...previous, [field]: value }));
+  }
+
+  async function saveApplication(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setSaving(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const { data: { user }, error: authError } =
+        await supabase.auth.getUser();
+
+      if (authError || !user) {
+        throw new Error("Your login session has expired. Please log in again.");
+      }
+
+      const { error: saveError } = await supabase
+        .from("draft")
+        .upsert(
+          {
+            ...form,
+            user_id: user.id,
+            status: "draft",
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" }
+        );
+
+      if (saveError) throw saveError;
+
+      setMessage("Your application draft has been saved successfully.");
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Unable to save your application."
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) {
+    return <p className="text-sm text-muted-foreground">Loading application...</p>;
+  }
+
+  const fields: {
+    key: keyof ApplicationForm;
+    label: string;
+    type?: string;
+  }[] = [
+    { key: "given_name", label: "Given Name" },
+    { key: "surname", label: "Surname" },
+    { key: "date_of_birth", label: "Date of Birth", type: "date" },
+    { key: "number", label: "Number" },
+    { key: "passport_number", label: "Passport Number" },
+    { key: "nid_number", label: "NID Number" },
+    { key: "passport_date_of_issue", label: "Passport Date of Issue", type: "date" },
+    { key: "passport_date_of_expiry", label: "Passport Date of Expiry", type: "date" },
+    { key: "place_birth", label: "Place of Birth" },
+    { key: "fathers_name", label: "Father's Name" },
+    { key: "mothers_name", label: "Mother's Name" },
+  ];
+
+  return (
+    <section className="max-w-3xl space-y-5 rounded-xl border bg-card p-6">
+      <div>
+        <h2 className="text-lg font-semibold">Candidate Application</h2>
+        <p className="text-sm text-muted-foreground">
+          Complete your information to apply as a candidate.
+        </p>
+      </div>
+
+      {error && (
+        <p role="alert" className="rounded-lg border border-destructive/30 p-3 text-sm text-destructive">
+          {error}
+        </p>
+      )}
+
+      {message && (
+        <p role="status" className="rounded-lg border border-green-500/30 p-3 text-sm text-green-700">
+          {message}
+        </p>
+      )}
+
+      <form onSubmit={saveApplication} className="space-y-4">
+        <div className="grid gap-4 sm:grid-cols-2">
+          {fields.map((field) => (
+            <div key={field.key}>
+              <label className="text-sm font-medium">{field.label}</label>
+              <input
+                type={field.type || "text"}
+                value={form[field.key]}
+                onChange={(e) => updateField(field.key, e.target.value)}
+                className="mt-1 w-full rounded-lg border bg-background px-3 py-2 text-sm"
+              />
+            </div>
+          ))}
+
+          <div>
+            <label className="text-sm font-medium">Gender</label>
+            <select
+              value={form.gender}
+              onChange={(e) => updateField("gender", e.target.value)}
+              className="mt-1 w-full rounded-lg border bg-background px-3 py-2 text-sm"
+            >
+              <option value="">Select gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div className="sm:col-span-2">
+            <label className="text-sm font-medium">Permanent Address</label>
+            <textarea
+              value={form.permanent_address}
+              onChange={(e) => updateField("permanent_address", e.target.value)}
+              rows={3}
+              className="mt-1 w-full rounded-lg border bg-background px-3 py-2 text-sm"
+            />
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          disabled={saving}
+          className="rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground disabled:opacity-50"
+        >
+          {saving ? "Saving..." : "Save Application"}
+        </button>
+      </form>
+    </section>
+  );
+}
 function isSSCOrHSC(qualification: string) {
   const value = qualification.trim().toUpperCase();
 
@@ -359,30 +575,9 @@ export function ProfilePage() {
               </p>
             </div>
           </>
-        ) : (
-          
-<div className="rounded-xl border border-dashed p-6 space-y-3">
-  <div>
-    <h3 className="font-semibold text-lg">
-      Welcome to NorthBridge Education
-    </h3>
-
-    <p className="mt-1 text-sm text-muted-foreground">
-      You do not have a candidate profile yet.
-      Your personal information will appear here
-      once you become a registered candidate.
-    </p>
-  </div>
-
-  <Link
-    to="/portal/application"
-    className="inline-flex rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90"
-  >
-    Apply to Become a Candidate
-  </Link>
-</div>
-
-        )}
+       ) : (
+  <CandidateApplicationForm />
+)}
       </section>
 
       {/* Education Information */}
