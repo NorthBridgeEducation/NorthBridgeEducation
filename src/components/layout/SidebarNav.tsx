@@ -9,6 +9,7 @@ import {
   Settings,
   Database,
   GraduationCap,
+  Languages,
   type LucideIcon,
 } from "lucide-react";
 
@@ -45,7 +46,13 @@ const navigationItems: NavigationItem[] = [
   title: "Education Add Test",
   path: "/app/candidate-education-test",
   icon: GraduationCap,
-},
+  },
+
+  {
+    title: "Language Tests",
+    path: "/app/candidate-language-tests",
+    icon: Languages,
+  },
   {
     title: "Finance",
     path: "/app/finance",

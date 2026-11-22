@@ -19,6 +19,8 @@ import { CandidateProfilePage } from "@/modules/candidate/pages/CandidateProfile
 // testing
 import { CandidateDatabaseTestPage } from "@/modules/candidate/pages/CandidateDatabaseTestPage";
 import { CandidateEducationTestPage } from "@/modules/candidate/pages/CandidateEducationTestPage";
+import { CandidateLanguageTestsPage } from "@/modules/candidate/pages/CandidateLanguageTestsPage";
+
 // Student Portal
 import { StudentLayout } from "@/portal/layouts/StudentLayout";
 import { StudentProtectedRoute } from "@/portal/router/StudentProtectedRoute";
@@ -78,6 +80,12 @@ export function AppRoutes() {
             path="candidate-education-test"
             element={<CandidateEducationTestPage />}
           />
+
+          <Route
+            path="candidate-language-tests"
+            element={<CandidateLanguageTestsPage />}
+          />
+
           <Route path="finance" element={<FinancePage />} />
           <Route path="files" element={<FilesPage />} />
           <Route path="others" element={<OthersPage />} />
