@@ -84,19 +84,25 @@ export function AppRoutes() {
           <Route path="settings" element={<SettingsPage />} />
         </Route>
       </Route>
+     
       {/* Student authentication */}
       <Route path="/portal/login" element={<StudentLoginPage />} />
 
       {/* Student application */}
       <Route element={<StudentProtectedRoute />}>
         <Route path="/portal" element={<StudentLayout />}>
-          <Route index element={<ProfilePage />} />
+          <Route
+            index
+            element={<Navigate to="/portal/profile" replace />}
+          />
+          <Route path="profile" element={<ProfilePage />} />
           <Route path="application" element={<ApplicationPage />} />
           <Route path="documents" element={<DocumentsPage />} />
           <Route path="payments" element={<PaymentsPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
         </Route>
       </Route>
+
 
       {/* Default route */}
         {/* <Route path="/" element={<Navigate to="/login" replace />} /> */}

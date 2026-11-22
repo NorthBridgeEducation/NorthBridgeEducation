@@ -12,11 +12,11 @@ import {
 import { supabase } from "@/lib/supabase/client";
 
 const navigation = [
-  { title: "My Profile", path: "/portal/profile", icon: UserRound },
-  { title: "Application", path: "/portal/application", icon: FileText },
-  { title: "Documents", path: "/portal/documents", icon: FolderOpen },
-  { title: "Payments", path: "/portal/payments", icon: CreditCard },
-  { title: "Notifications", path: "/portal/notifications", icon: Bell },
+  { title: "My Profile", path: "/portal/profile", icon: UserRound, end: true },
+  { title: "Application", path: "/portal/application", icon: FileText, end: true },
+  { title: "Documents", path: "/portal/documents", icon: FolderOpen, end: true },
+  { title: "Payments", path: "/portal/payments", icon: CreditCard, end: true },
+  { title: "Notifications", path: "/portal/notifications", icon: Bell, end: true },
 ];
 
 export function StudentLayout() {
