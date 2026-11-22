@@ -36,8 +36,8 @@ type Application = {
       name: string;
       country: {
         name: string;
-      };
-    };
+      } | null;
+    } | null;
   } | null;
 };
 
@@ -75,6 +75,7 @@ export function ApplicationPage() {
         throw new Error("Please log in again to continue.");
       }
 
+      // Find candidate linked to logged-in user
       const { data: candidateData, error: candidateError } =
         await supabase
           .from("candidates")
@@ -91,6 +92,7 @@ export function ApplicationPage() {
 
       setCandidate(candidateData);
 
+      // Load active countries and candidate applications
       const [countryResult, applicationResult] = await Promise.all([
         supabase
           .from("countries")
@@ -121,16 +123,21 @@ export function ApplicationPage() {
       if (applicationResult.error) throw applicationResult.error;
 
       setCountries(countryResult.data || []);
-      setApplications((applicationResult.data || []) as unknown as Application[]);
+      setApplications(
+        (applicationResult.data || []) as unknown as Application[]
+      );
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Could not load applications."
+        err instanceof Error
+          ? err.message
+          : "Could not load applications."
       );
     } finally {
       setLoading(false);
     }
   }
 
+  // Load universities when country changes
   useEffect(() => {
     async function loadUniversities() {
       setUniversityId("");
@@ -158,6 +165,7 @@ export function ApplicationPage() {
     void loadUniversities();
   }, [countryId]);
 
+  // Load programs when university changes
   useEffect(() => {
     async function loadPrograms() {
       setProgramId("");
@@ -227,7 +235,11 @@ export function ApplicationPage() {
         (country) => country.id === countryId
       );
 
-      if (selectedProgram && selectedUniversity && selectedCountry) {
+      if (
+        selectedProgram &&
+        selectedUniversity &&
+        selectedCountry
+      ) {
         setApplications((previous) => [
           {
             ...data,
@@ -236,7 +248,9 @@ export function ApplicationPage() {
               degree_level: selectedProgram.degree_level,
               university: {
                 name: selectedUniversity.name,
-                country: { name: selectedCountry.name },
+                country: {
+                  name: selectedCountry.name,
+                },
               },
             },
           },
@@ -244,7 +258,9 @@ export function ApplicationPage() {
         ]);
       }
 
-      setSuccess("Your application has been submitted successfully.");
+      setSuccess(
+        "Your application has been submitted successfully."
+      );
 
       setCountryId("");
       setUniversityId("");
@@ -253,7 +269,9 @@ export function ApplicationPage() {
       setPrograms([]);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Application submission failed."
+        err instanceof Error
+          ? err.message
+          : "Application submission failed."
       );
     } finally {
       setSubmitting(false);
@@ -271,29 +289,43 @@ export function ApplicationPage() {
   if (!candidate) {
     return (
       <section className="max-w-2xl space-y-3 rounded-xl border border-dashed p-6">
-        <h1 className="text-xl font-semibold">My Applications</h1>
+        <h1 className="text-xl font-semibold">
+          My Applications
+        </h1>
+
         <p className="text-sm text-muted-foreground">
-          Your account is not linked to a registered candidate profile yet.
-          Please contact NorthBridge Education to complete your candidate
-          registration before applying to programs.
+          Your account is not linked to a registered candidate
+          profile yet. Please contact NorthBridge Education to
+          complete your candidate registration before applying
+          to programs.
         </p>
       </section>
     );
   }
 
+  const selectedProgram = programs.find(
+    (program) => program.id === programId
+  );
+
   return (
-    <section className="max-w-4xl space-y-8">
+    <section className="max-w-5xl space-y-8">
+      {/* Page Header */}
       <div>
-        <p className="text-sm text-muted-foreground">STUDENT PORTAL</p>
+        <p className="text-sm text-muted-foreground">
+          STUDENT PORTAL
+        </p>
+
         <h1 className="mt-1 text-2xl font-semibold tracking-tight">
           My Applications
         </h1>
+
         <p className="mt-1 text-sm text-muted-foreground">
-          Explore universities and submit applications to your preferred
-          programs.
+          Explore universities and submit applications to your
+          preferred programs.
         </p>
       </div>
 
+      {/* Error Message */}
       {error && (
         <p
           role="alert"
@@ -303,6 +335,7 @@ export function ApplicationPage() {
         </p>
       )}
 
+      {/* Success Message */}
       {success && (
         <p
           role="status"
@@ -312,23 +345,36 @@ export function ApplicationPage() {
         </p>
       )}
 
+      {/* Find a Program */}
       <div className="space-y-5 rounded-xl border bg-card p-5 sm:p-6">
         <div>
-          <h2 className="text-lg font-semibold">Find a Program</h2>
+          <h2 className="text-lg font-semibold">
+            Find a Program
+          </h2>
+
           <p className="text-sm text-muted-foreground">
-            Select a destination, university and program.
+            Select a country and university to explore available
+            programs.
           </p>
         </div>
 
+        {/* Country and University */}
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Country</label>
+            <label className="text-sm font-medium">
+              Country
+            </label>
+
             <select
               value={countryId}
-              onChange={(event) => setCountryId(event.target.value)}
+              onChange={(event) => {
+                setError("");
+                setCountryId(event.target.value);
+              }}
               className="h-10 w-full rounded-md border bg-background px-3 text-sm"
             >
               <option value="">Select country</option>
+
               {countries.map((country) => (
                 <option key={country.id} value={country.id}>
                   {country.name}
@@ -338,98 +384,232 @@ export function ApplicationPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">University</label>
+            <label className="text-sm font-medium">
+              University
+            </label>
+
             <select
               value={universityId}
-              onChange={(event) => setUniversityId(event.target.value)}
+              onChange={(event) => {
+                setError("");
+                setUniversityId(event.target.value);
+              }}
               disabled={!countryId}
-              className="h-10 w-full rounded-md border bg-background px-3 text-sm disabled:opacity-50"
+              className="h-10 w-full rounded-md border bg-background px-3 text-sm disabled:cursor-not-allowed disabled:opacity-50"
             >
               <option value="">Select university</option>
+
               {universities.map((university) => (
-                <option key={university.id} value={university.id}>
+                <option
+                  key={university.id}
+                  value={university.id}
+                >
                   {university.name}
                 </option>
               ))}
             </select>
           </div>
-
-          <div className="space-y-2 sm:col-span-2">
-            <label className="text-sm font-medium">Program</label>
-            <select
-              value={programId}
-              onChange={(event) => setProgramId(event.target.value)}
-              disabled={!universityId}
-              className="h-10 w-full rounded-md border bg-background px-3 text-sm disabled:opacity-50"
-            >
-              <option value="">Select program</option>
-              {programs.map((program) => (
-                <option key={program.id} value={program.id}>
-                  {program.name} ({program.degree_level})
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
 
-        {programs.find((program) => program.id === programId)?.description && (
-          <p className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
-            {programs.find((program) => program.id === programId)?.description}
-          </p>
+        {/* Available Programs Grid */}
+        <div className="space-y-3">
+          <div>
+            <h3 className="text-sm font-semibold">
+              Available Programs
+            </h3>
+
+            <p className="mt-1 text-xs text-muted-foreground">
+              Select a program card to continue.
+            </p>
+          </div>
+
+          {!countryId ? (
+            <div className="rounded-xl border border-dashed p-8 text-center">
+              <p className="text-sm text-muted-foreground">
+                Select a country to explore universities and
+                available programs.
+              </p>
+            </div>
+          ) : !universityId ? (
+            <div className="rounded-xl border border-dashed p-8 text-center">
+              <p className="text-sm text-muted-foreground">
+                Select a university to view its available programs.
+              </p>
+            </div>
+          ) : programs.length === 0 ? (
+            <div className="rounded-xl border border-dashed p-8 text-center">
+              <p className="font-medium">
+                No programs available
+              </p>
+
+              <p className="mt-1 text-sm text-muted-foreground">
+                There are currently no active programs for this
+                university.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {programs.map((program) => {
+                const selected = programId === program.id;
+
+                return (
+                  <button
+                    key={program.id}
+                    type="button"
+                    onClick={() => {
+                      setProgramId(program.id);
+                      setError("");
+                      setSuccess("");
+                    }}
+                    aria-pressed={selected}
+                    className={`group relative flex min-h-[170px] flex-col rounded-xl border p-4 text-left transition-all ${
+                      selected
+                        ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                        : "border-border bg-card hover:border-primary/50 hover:bg-muted/40"
+                    }`}
+                  >
+                    <div className="flex w-full items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h4 className="font-semibold leading-snug">
+                          {program.name}
+                        </h4>
+
+                        <span className="mt-2 inline-flex rounded-full border px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                          {program.degree_level}
+                        </span>
+                      </div>
+
+                      <span
+                        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-xs ${
+                          selected
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-muted-foreground/40 text-transparent"
+                        }`}
+                      >
+                        ✓
+                      </span>
+                    </div>
+
+                    {program.description && (
+                      <p className="mt-3 line-clamp-3 text-xs leading-relaxed text-muted-foreground">
+                        {program.description}
+                      </p>
+                    )}
+
+                    <div className="mt-auto pt-4">
+                      <span
+                        className={`text-xs font-semibold ${
+                          selected
+                            ? "text-primary"
+                            : "text-muted-foreground group-hover:text-primary"
+                        }`}
+                      >
+                        {selected
+                          ? "Selected"
+                          : "Select Program →"}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Selected Program Information */}
+        {selectedProgram && (
+          <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
+            <p className="text-xs font-medium text-primary">
+              SELECTED PROGRAM
+            </p>
+
+            <h3 className="mt-1 font-semibold">
+              {selectedProgram.name}
+            </h3>
+
+            <p className="mt-1 text-sm text-muted-foreground">
+              {selectedProgram.degree_level}
+            </p>
+
+            {selectedProgram.description && (
+              <p className="mt-2 text-sm text-muted-foreground">
+                {selectedProgram.description}
+              </p>
+            )}
+          </div>
         )}
 
-        <div className="flex justify-end">
+        {/* Submit Button */}
+        <div className="flex justify-end border-t pt-4">
           <button
             type="button"
             onClick={submitApplication}
             disabled={!programId || submitting}
-            className="rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {submitting ? "Submitting..." : "Submit Application"}
+            {submitting
+              ? "Submitting..."
+              : "Submit Application"}
           </button>
         </div>
       </div>
 
+      {/* Candidate Applications */}
       <div className="space-y-4">
         <div>
-          <h2 className="text-lg font-semibold">Your Applications</h2>
+          <h2 className="text-lg font-semibold">
+            Your Applications
+          </h2>
+
           <p className="text-sm text-muted-foreground">
-            Each program application is tracked separately.
+            Track the status of each program application separately.
           </p>
         </div>
 
         {applications.length === 0 ? (
           <div className="rounded-xl border border-dashed p-8 text-center">
-            <p className="font-medium">No applications yet</p>
+            <p className="font-medium">
+              No applications yet
+            </p>
+
             <p className="mt-1 text-sm text-muted-foreground">
-              Choose a program above to submit your first application.
+              Choose an available program above to submit your
+              first application.
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             {applications.map((application) => (
               <div
                 key={application.id}
-                className="flex flex-col gap-3 rounded-xl border bg-card p-4 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col justify-between gap-4 rounded-xl border bg-card p-4 sm:flex-row sm:items-center"
               >
-                <div>
-                  <h3 className="font-medium">
+                <div className="min-w-0">
+                  <h3 className="font-semibold">
                     {application.program?.name || "Program"}
                   </h3>
+
                   <p className="mt-1 text-sm text-muted-foreground">
-                    {application.program?.university?.name || "University"}
+                    {application.program?.university?.name ||
+                      "University"}
                     {" · "}
-                    {application.program?.university?.country?.name || "Country"}
-                    {" · "}
+                    {application.program?.university?.country?.name ||
+                      "Country"}
+                  </p>
+
+                  <p className="mt-1 text-xs text-muted-foreground">
                     {application.program?.degree_level || ""}
                   </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
+
+                  <p className="mt-2 text-xs text-muted-foreground">
                     Submitted:{" "}
-                    {new Date(application.submitted_at).toLocaleDateString()}
+                    {new Date(
+                      application.submitted_at
+                    ).toLocaleDateString()}
                   </p>
                 </div>
 
-                <span className="w-fit rounded-full border px-3 py-1 text-xs font-medium">
+                <span className="w-fit shrink-0 rounded-full border px-3 py-1 text-xs font-semibold">
                   {application.status}
                 </span>
               </div>
