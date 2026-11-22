@@ -126,7 +126,7 @@ function CandidateApplicationForm() {
     setForm((previous) => ({ ...previous, [field]: value }));
   }
 
-  async function saveApplication(e: React.FormEvent<HTMLFormElement>) {
+  async function saveApplication(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setSaving(true);
     setError("");
