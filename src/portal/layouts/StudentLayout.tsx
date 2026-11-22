@@ -8,6 +8,7 @@ import {
   Bell,
   LogOut,
   Network,
+  Languages,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 
@@ -17,6 +18,12 @@ const navigation = [
   { title: "Documents", path: "/portal/documents", icon: FolderOpen, end: true },
   { title: "Payments", path: "/portal/payments", icon: CreditCard, end: true },
   { title: "Notifications", path: "/portal/notifications", icon: Bell, end: true },
+  {
+  title: "Language Tests",
+  path: "/portal/language-tests",
+  icon: Languages,
+  end: true,
+},
 ];
 
 export function StudentLayout() {
