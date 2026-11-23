@@ -137,9 +137,7 @@ function Brand() {
         <p className="text-xl font-bold tracking-tight text-[#122c46]">
           NorthBridge Education
         </p>
-        <p className="text-[10px] uppercase tracking-[0.18em] text-slate-500">
-          Global Education
-        </p>
+        
       </div>
     </Link>
   );
@@ -286,14 +284,10 @@ function HeroSection() {
     <section className="bg-[#f3f7fa]">
       <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-14 sm:px-6 sm:py-20 lg:grid-cols-2 lg:px-8 lg:py-24">
         <div>
-          <div className="mb-6 inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-[#28577e]">
-            <Globe2 className="size-4" />
-            YOUR GLOBAL EDUCATION PARTNER
-          </div>
+          
 
           <h1 className="max-w-xl text-4xl font-semibold leading-[1.15] tracking-tight text-[#122c46] sm:text-5xl lg:text-6xl">
             Build your future through
-            <span className="text-[#39749b]"> global education.</span>
           </h1>
 
           <p className="mt-6 max-w-xl text-base leading-8 text-slate-600">
@@ -643,7 +637,6 @@ function Footer() {
       <div className="border-t border-white/10">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-5 text-xs text-slate-400 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
           <p>© {new Date().getFullYear()} NorthBridge Education. All rights reserved.</p>
-          <p>Global Education. Clear Direction.</p>
         </div>
       </div>
     </footer>
