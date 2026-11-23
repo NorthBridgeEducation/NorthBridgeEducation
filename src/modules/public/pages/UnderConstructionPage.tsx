@@ -8,7 +8,7 @@ function Brand() {
     <Link to="/" className="flex items-center gap-3">
       <img
         src="/pwa-192x192.png"
-        alt="NBridge"
+        alt="NorthBridge"
         className="size-10 rounded-lg object-contain"
       />
       <div className="leading-tight">
@@ -23,9 +23,16 @@ function Brand() {
 export function ComingSoonPage() {
   return (
     <div className="flex min-h-screen flex-col bg-[#f3f7fa] text-[#122c46]">
-      <header className="mx-auto flex h-[72px] w-full max-w-7xl items-center px-4 sm:px-6 lg:px-8">
-        <Brand />
-      </header>
+      <header className="mx-auto flex min-h-[72px] w-full max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
+  <Brand />
+
+  <Link
+    to="/portal/login"
+    className="inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-lg bg-[#122c46] px-3 text-sm font-semibold text-white transition-colors hover:bg-[#28577e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#28577e] focus-visible:ring-offset-2 sm:px-4"
+  >
+    Login
+  </Link>
+</header>
 
       <main className="flex flex-1 items-center justify-center px-4 pb-16">
         <div className="text-center">
