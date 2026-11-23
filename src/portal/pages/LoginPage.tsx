@@ -93,7 +93,7 @@ if (checkingSession) {
           <span className="flex size-10 items-center justify-center rounded-xl bg-foreground text-background">
             <Network className="size-5" />
           </span>
-          <span className="text-xl font-semibold tracking-tight">NBridge</span>
+          <span className="text-xl font-semibold tracking-tight">NorthBridge</span>
         </Link>
 
         <div className="rounded-2xl border bg-card p-7 shadow-sm sm:p-9">
@@ -213,7 +213,7 @@ if (checkingSession) {
         </div>
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} NBridge. Student Portal.
+          © {new Date().getFullYear()} NorthBridge. Student Portal.
         </p>
       </div>
     </main>
