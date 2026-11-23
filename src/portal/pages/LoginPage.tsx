@@ -40,22 +40,24 @@ export function StudentLoginPage() {
     mounted = false;
   };
 }, [navigate]);
-  async function handleGoogleSignIn() {
-    setGoogleLoading(true);
-    setError("");
+  
+async function handleGoogleSignIn() {
+  setGoogleLoading(true);
+  setError("");
 
-    const { error } = await supabase.auth.signInWithOAuth({
-  provider: "google",
-  options: {
-    redirectTo: `${window.location.origin}/portal/profile`,
-  },
-});
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${window.location.origin}/portal/profile`,
+    },
+  });
 
-    if (error) {
-      setError(error.message);
-      setGoogleLoading(false);
-    }
+  if (error) {
+    setError(error.message);
+    setGoogleLoading(false);
   }
+}
+
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
