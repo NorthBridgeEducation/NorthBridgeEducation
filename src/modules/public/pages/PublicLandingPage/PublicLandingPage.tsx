@@ -123,7 +123,7 @@ const steps = [
 
 function Brand() {
   return (
-    <Link to="/" className="flex items-center gap-3">
+    <Link to="/home-page" className="flex items-center gap-3">
       <div className="flex size-10 items-center justify-center rounded-lg bg-[#153b63] text-white">
         <img
             src="/pwa-192x192.png"
