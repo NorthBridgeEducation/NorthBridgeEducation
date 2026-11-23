@@ -36,6 +36,16 @@ const educationFields = [
   { key: "obtained_mark", label: "Result / GPA", type: "number" },
 ] as const;
 
+const languageTestFields = [
+  { key: "test_name", label: "Test name" },
+  { key: "test_type", label: "Test type" },
+  { key: "obtained_score", label: "Score", type: "number" },
+  { key: "score_scale", label: "Score scale" },
+  { key: "test_date", label: "Test date", type: "date" },
+  { key: "expiry_date", label: "Expiry date", type: "date" },
+  { key: "certificate_no", label: "Certificate number" },
+] as const;
+
 type Field = {
   key: string;
   label: string;
@@ -127,7 +137,7 @@ function FieldInput({
         required={required}
         min={field.key === "passing_year" ? 1950 : undefined}
         max={field.key === "passing_year" ? 2100 : undefined}
-        step={field.key === "obtained_mark" ? "any" : undefined}
+        step={field.type === "number" && field.key !== "passing_year" ? "any" : undefined}
       />
     </label>
   );
@@ -171,6 +181,9 @@ export function ProfileForm({
 }: ProfileFormProps) {
   const [personal, setPersonal] = useState(initialPersonal);
   const [education, setEducation] = useState(initialEducation);
+  const [languageTest, setLanguageTest] = useState(() =>
+    readFields(languageTestFields, null),
+  );
   const [edit, setEdit] = useState<{
     section: string;
     restore: () => void;
@@ -186,6 +199,7 @@ export function ProfileForm({
     event: FormEvent<HTMLFormElement>,
     section: string,
     save: () => Promise<void>,
+    successText = draft ? "Draft saved." : "Changes saved.",
   ) {
     event.preventDefault();
     if (saving || readOnly || edit?.section !== section) return;
@@ -198,7 +212,7 @@ export function ProfileForm({
       setEdit(null);
       setNotice({
         section,
-        text: draft ? "Draft saved." : "Changes saved.",
+        text: successText,
         error: false,
       });
     } catch (error) {
@@ -409,6 +423,58 @@ export function ProfileForm({
         )}
       </section>
 
+      {showCertificateDemos && (
+        <form
+          className="space-y-4 rounded-xl border bg-card p-4 sm:p-6"
+          onSubmit={(event) =>
+            void saveSection(
+              event,
+              "language-test",
+              async () => {
+                if (!languageTest.test_name.trim()) {
+                  throw new Error("Enter the test name.");
+                }
+              },
+              "Demo saved for this visit.",
+            )
+          }
+        >
+          {sectionHeader("Language Tests", "language-test", () =>
+            setLanguageTest(languageTest),
+          )}
+          {edit?.section === "language-test" && !readOnly ? (
+            <fieldset disabled={disabled} className="min-w-0 grid gap-x-4 gap-y-3 sm:grid-cols-2">
+              {languageTestFields.map((field) => (
+                <FieldInput
+                  key={field.key}
+                  field={field}
+                  value={languageTest[field.key]}
+                  required={field.key === "test_name"}
+                  onChange={(value) =>
+                    setLanguageTest((previous) => ({ ...previous, [field.key]: value }))
+                  }
+                />
+              ))}
+            </fieldset>
+          ) : languageTest.test_name.trim() ? (
+            <dl className="min-w-0 grid gap-x-4 gap-y-3 sm:grid-cols-2">
+              {languageTestFields.map(({ key, label }) =>
+                displayField(label, languageTest[key]),
+              )}
+            </dl>
+          ) : (
+            <p className="text-sm text-muted-foreground">No language test added.</p>
+          )}
+
+          <DemoCertificateUpload
+            level="Language test"
+            editing={edit?.section === "language-test" && !readOnly}
+            disabled={disabled}
+          />
+          {sectionActions("language-test", "Save demo")}
+        </form>
+      )}
+
       <form
         className="space-y-4 rounded-xl border bg-card p-4 sm:p-6"
         onSubmit={(event) =>
@@ -437,7 +503,7 @@ function DemoCertificateUpload({
   editing,
   disabled,
 }: {
-  level: "SSC" | "HSC";
+  level: "SSC" | "HSC" | "Language test";
   editing: boolean;
   disabled: boolean;
 }) {
@@ -465,7 +531,7 @@ function DemoCertificatePicker({
   disabled,
   onUpload,
 }: {
-  level: "SSC" | "HSC";
+  level: "SSC" | "HSC" | "Language test";
   disabled: boolean;
   onUpload: (fileName: string) => void;
 }) {
