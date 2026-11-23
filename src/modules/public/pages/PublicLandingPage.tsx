@@ -128,14 +128,14 @@ function Brand() {
       <div className="flex size-10 items-center justify-center rounded-lg bg-[#153b63] text-white">
         <img
             src="/pwa-192x192.png"
-            alt="NBridge"
+            alt="NorthBridge Education"
             className="size-10 rounded-lg object-contain"
         />
       </div>
 
       <div className="leading-tight">
         <p className="text-xl font-bold tracking-tight text-[#122c46]">
-          NBridge
+          NorthBridge Education
         </p>
         <p className="text-[10px] uppercase tracking-[0.18em] text-slate-500">
           Global Education
@@ -517,7 +517,7 @@ function AboutSection() {
       <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:items-center lg:px-8">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#39749b]">
-            About NBridge
+            About NorthBridge Education
           </p>
 
           <h2 className="mt-3 text-3xl font-semibold leading-tight tracking-tight text-[#122c46] sm:text-4xl">
@@ -529,7 +529,7 @@ function AboutSection() {
           <p className="text-sm leading-8 text-slate-600 sm:text-base">
             Choosing where to study is an important decision. It involves your
             academic background, interests, resources and long-term goals.
-            NBridge aims to help students explore their options and understand
+            NorthBridge Education aims to help students explore their options and understand
             the next steps in their international education journey.
           </p>
 
@@ -598,10 +598,8 @@ function Footer() {
             </div>
 
             <div>
-              <p className="text-xl font-bold">NBridge</p>
-              <p className="text-[10px] uppercase tracking-[0.18em] text-slate-300">
-                Global Education
-              </p>
+              <p className="text-xl font-bold">NorthBridge Education</p>
+              
             </div>
           </div>
 
@@ -644,7 +642,7 @@ function Footer() {
 
       <div className="border-t border-white/10">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-5 text-xs text-slate-400 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
-          <p>© {new Date().getFullYear()} NBridge. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} NorthBridge Education. All rights reserved.</p>
           <p>Global Education. Clear Direction.</p>
         </div>
       </div>
