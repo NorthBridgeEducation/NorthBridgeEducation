@@ -1,199 +1,212 @@
-
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
-  UserRound,
+  Bell,
+  CreditCard,
   FileText,
   FolderOpen,
-  CreditCard,
-  Bell,
-  LogOut,
-  Network,
   Languages,
+  LogOut,
   Menu,
+  Network,
+  UserRound,
+  X,
 } from "lucide-react";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog as DialogPrimitive } from "radix-ui";
+
 import { supabase } from "@/lib/supabase/client";
 
 const navigation = [
-  { title: "My Profile", path: "/portal/profile", icon: UserRound, end: true },
-  { title: "Application", path: "/portal/application", icon: FileText, end: true },
-  { title: "Documents", path: "/portal/documents", icon: FolderOpen, end: true },
-  { title: "Payments", path: "/portal/payments", icon: CreditCard, end: true },
-  { title: "Notifications", path: "/portal/notifications", icon: Bell, end: true },
-  {
-  title: "Language Tests",
-  path: "/portal/language-tests",
-  icon: Languages,
-  end: true,
-},
+  { title: "My Profile", path: "/portal/profile", icon: UserRound },
+  { title: "Application", path: "/portal/application", icon: FileText },
+  { title: "Documents", path: "/portal/documents", icon: FolderOpen },
+  { title: "Payments", path: "/portal/payments", icon: CreditCard },
+  { title: "Notifications", path: "/portal/notifications", icon: Bell },
+  { title: "Language Tests", path: "/portal/language-tests", icon: Languages },
 ];
+
+const iconButtonClass =
+  "inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring";
+
+type SidebarProps = {
+  onNavigate?: () => void;
+  onSignOut: () => void;
+  signingOut: boolean;
+  signOutError: string;
+};
+
+function StudentSidebar({
+  onNavigate,
+  onSignOut,
+  signingOut,
+  signOutError,
+}: SidebarProps) {
+  return (
+    <>
+      <nav
+        aria-label="Student portal"
+        className="min-h-0 flex-1 space-y-1 overflow-y-auto p-4"
+      >
+        {navigation.map(({ title, path, icon: Icon }) => (
+          <NavLink
+            key={path}
+            to={path}
+            end
+            onClick={onNavigate}
+            className={({ isActive }) =>
+              [
+                "flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring",
+                isActive
+                  ? "bg-muted text-foreground"
+                  : "text-muted-foreground hover:bg-muted/70 hover:text-foreground",
+              ].join(" ")
+            }
+          >
+            <Icon className="size-[18px] shrink-0" aria-hidden="true" />
+            {title}
+          </NavLink>
+        ))}
+      </nav>
+
+      <div className="shrink-0 border-t p-4">
+        {signOutError && (
+          <p role="alert" className="mb-2 px-3 text-sm text-destructive">
+            {signOutError}
+          </p>
+        )}
+
+        <button
+          type="button"
+          onClick={onSignOut}
+          disabled={signingOut}
+          className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-50"
+        >
+          <LogOut className="size-[18px] shrink-0" aria-hidden="true" />
+          {signingOut ? "Signing out…" : "Sign out"}
+        </button>
+      </div>
+    </>
+  );
+}
 
 export function StudentLayout() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState("");
 
-  async function handleLogout() {
-    const { error } = await supabase.auth.signOut();
+  const currentPage =
+    navigation.find(({ path }) => pathname === path)?.title ?? "Student Portal";
 
-    if (error) {
-      console.error("Student logout failed:", error.message);
-      return;
+  useEffect(() => {
+    // Match Tailwind's md breakpoint so the drawer closes on desktop.
+    const desktop = window.matchMedia("(min-width: 48rem)");
+
+    function closeOnDesktop(event: MediaQueryListEvent) {
+      if (event.matches) setMenuOpen(false);
     }
 
-    navigate("/portal/login", { replace: true });
+    desktop.addEventListener("change", closeOnDesktop);
+    return () => desktop.removeEventListener("change", closeOnDesktop);
+  }, []);
+
+  async function handleSignOut() {
+    if (signingOut) return;
+
+    setSigningOut(true);
+    setSignOutError("");
+
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+
+      setMenuOpen(false);
+      navigate("/portal/login", { replace: true });
+    } catch {
+      setSignOutError("Could not sign out. Please try again.");
+    } finally {
+      setSigningOut(false);
+    }
   }
+
+  const sidebarProps = {
+    onSignOut: handleSignOut,
+    signingOut,
+    signOutError,
+  };
 
   return (
     <div className="flex min-h-dvh bg-background text-foreground">
-      <aside className="hidden w-64 shrink-0 border-r bg-card md:flex md:flex-col">
-        <div className="flex h-16 items-center gap-3 border-b px-5">
+      <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r bg-card md:flex">
+        <div className="flex h-16 shrink-0 items-center gap-3 border-b px-5">
           <span className="flex size-9 items-center justify-center rounded-lg bg-foreground text-background">
-            <Network className="size-5" />
+            <Network className="size-5" aria-hidden="true" />
           </span>
           <span className="font-semibold tracking-tight">NBridge</span>
         </div>
 
-        <div className="px-4 py-5">
-          <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Student Portal
-          </p>
+        <p className="px-7 pt-5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Student Portal
+        </p>
 
-          <nav className="space-y-1">
-            {navigation.map((item) => {
-              const Icon = item.icon;
-
-              return (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  end={item.end}
-                  className={({ isActive }) =>
-                    [
-                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                      isActive
-                        ? "bg-muted text-foreground"
-                        : "text-muted-foreground hover:bg-muted/70 hover:text-foreground",
-                    ].join(" ")
-                  }
-                >
-                  <Icon className="size-[18px]" />
-                  {item.title}
-                </NavLink>
-              );
-            })}
-          </nav>
-        </div>
-
-        <div className="mt-auto border-t p-4">
-          <button
-            onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            <LogOut className="size-[18px]" />
-            Sign out
-          </button>
-        </div>
+        <StudentSidebar {...sidebarProps} />
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-       <header className="flex h-16 shrink-0 items-center justify-between border-b bg-card px-5">
-  <div className="flex items-center gap-3 md:hidden">
-    <Dialog>
-      <DialogTrigger asChild>
-        <button
-          type="button"
-          aria-label="Open student menu"
-          className="inline-flex size-10 items-center justify-center rounded-lg hover:bg-muted"
-        >
-          <Menu className="size-5" aria-hidden="true" />
-        </button>
-      </DialogTrigger>
-
-      <DialogContent
-        aria-describedby={undefined}
-        className="top-0 left-0 flex h-dvh w-72 max-w-[85vw] translate-x-0 translate-y-0 flex-col gap-0 rounded-none border-r bg-card p-0 text-card-foreground sm:max-w-[85vw] data-open:slide-in-from-left data-open:zoom-in-100 data-closed:slide-out-to-left"
-      >
-        <div className="flex h-16 shrink-0 items-center gap-3 border-b px-5 pr-12">
-          <Network className="size-5" aria-hidden="true" />
-          <DialogTitle>Student Portal</DialogTitle>
-        </div>
-
-        <nav aria-label="Student portal" className="min-h-0 flex-1 space-y-1 overflow-y-auto p-4">
-          {navigation.map((item) => {
-            const Icon = item.icon;
-
-            return (
-              <DialogClose key={item.path} asChild>
-                <NavLink
-                  to={item.path}
-                  end={item.end}
-                  className={({ isActive }) =>
-                    [
-                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium",
-                      isActive
-                        ? "bg-muted text-foreground"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                    ].join(" ")
-                  }
+        <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center border-b bg-card px-3 sm:px-5">
+          <div className="flex min-w-0 items-center gap-2 md:hidden">
+            <DialogPrimitive.Root open={menuOpen} onOpenChange={setMenuOpen}>
+              <DialogPrimitive.Trigger asChild>
+                <button
+                  type="button"
+                  aria-label="Open student menu"
+                  className={iconButtonClass}
                 >
-                  <Icon className="size-[18px]" aria-hidden="true" />
-                  {item.title}
-                </NavLink>
-              </DialogClose>
-            );
-          })}
-        </nav>
+                  <Menu className="size-5" aria-hidden="true" />
+                </button>
+              </DialogPrimitive.Trigger>
 
-        <div className="shrink-0 border-t p-4">
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
-          >
-            <LogOut className="size-[18px]" aria-hidden="true" />
-            Sign out
-          </button>
-        </div>
-      </DialogContent>
-    </Dialog>
+              <DialogPrimitive.Portal>
+                <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-black/45 motion-safe:data-open:animate-in motion-safe:data-open:fade-in-0 motion-safe:data-closed:animate-out motion-safe:data-closed:fade-out-0" />
 
-    <span className="font-semibold">NBridge</span>
-  </div>
+                <DialogPrimitive.Content
+                  aria-describedby={undefined}
+                  className="fixed inset-y-0 left-0 z-50 flex h-dvh w-72 max-w-[85vw] flex-col border-r bg-card text-card-foreground shadow-xl motion-safe:data-open:animate-in motion-safe:data-open:slide-in-from-left motion-safe:data-closed:animate-out motion-safe:data-closed:slide-out-to-left"
+                >
+                  <div className="flex h-16 shrink-0 items-center justify-between gap-3 border-b px-4">
+                    <DialogPrimitive.Title className="font-semibold">
+                      Student Portal
+                    </DialogPrimitive.Title>
 
-  <span className="hidden text-sm font-medium md:block">
-    Student Workspace
-  </span>
-</header>
+                    <DialogPrimitive.Close asChild>
+                      <button
+                        type="button"
+                        aria-label="Close student menu"
+                        className={iconButtonClass}
+                      >
+                        <X className="size-5" aria-hidden="true" />
+                      </button>
+                    </DialogPrimitive.Close>
+                  </div>
 
-          {navigation.map((item) => {
-            const Icon = item.icon;
+                  <StudentSidebar
+                    {...sidebarProps}
+                    onNavigate={() => setMenuOpen(false)}
+                  />
+                </DialogPrimitive.Content>
+              </DialogPrimitive.Portal>
+            </DialogPrimitive.Root>
 
-            return (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                end={item.end}
-                className={({ isActive }) =>
-                  [
-                    "flex shrink-0 items-center gap-2 rounded-md px-3 py-2 text-xs font-medium",
-                    isActive
-                      ? "bg-muted text-foreground"
-                      : "text-muted-foreground",
-                  ].join(" ")
-                }
-              >
-                <Icon className="size-4" />
-                {item.title}
-              </NavLink>
-            );
-          })}
+            <span className="truncate text-sm font-semibold">{currentPage}</span>
+          </div>
 
-        <main className="flex-1 p-5 sm:p-7 lg:p-9">
+          <span className="hidden text-sm font-medium md:block">
+            Student Workspace
+          </span>
+        </header>
+
+        <main className="flex-1 p-4 sm:p-7 lg:p-9">
           <div className="mx-auto w-full max-w-7xl">
             <Outlet />
           </div>
