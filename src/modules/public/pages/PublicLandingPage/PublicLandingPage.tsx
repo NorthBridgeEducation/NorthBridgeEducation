@@ -332,7 +332,7 @@ function HeroSection() {
         <div className="relative">
           <div className="overflow-hidden rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
             <img
-              src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1400&q=85"
+              src="https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1400&q=85"
               alt="Students walking on a university campus"
               className="aspect-[5/4] w-full rounded-lg object-cover"
             />
