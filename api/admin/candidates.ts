@@ -9,11 +9,10 @@ export default async function handler(
 ) {
   res.setHeader("Cache-Control", "no-store");
 
-  if (req.method !== "GET") {
-    return res.status(405).json({
-      message: "Method not allowed.",
-    });
-  }
+ if (req.method !== "GET" && req.method !== "POST") {
+  res.setHeader("Allow", "GET, POST");
+  return res.status(405).json({ message: "Method not allowed." });
+}
 
   // Existing custom Admin Authentication
   if (!isAdminAuthenticated(req)) {
@@ -46,7 +45,67 @@ export default async function handler(
         },
       },
     );
+if (req.method === "POST") {
+  if (req.headers["content-type"]?.split(";")[0].trim() !== "application/json") {
+    return res.status(415).json({ message: "Send an application/json body." });
+  }
 
+  const body = req.body;
+
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return res.status(400).json({ message: "Invalid candidate information." });
+  }
+
+  const firstName = typeof body.first_name === "string" ? body.first_name.trim() : "";
+  const lastName = typeof body.last_name === "string" ? body.last_name.trim() : "";
+  const phone = typeof body.phone === "string" ? body.phone.trim() : "";
+  const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+  const birthDate = typeof body.date_of_birth === "string" ? body.date_of_birth.trim() : "";
+
+  if (!firstName) {
+    return res.status(400).json({ message: "First name is required." });
+  }
+
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ message: "Enter a valid email address." });
+  }
+
+  if (birthDate) {
+    const parsed = new Date(`${birthDate}T00:00:00Z`);
+    if (
+      !/^\d{4}-\d{2}-\d{2}$/.test(birthDate) ||
+      Number.isNaN(parsed.getTime()) ||
+      parsed.toISOString().slice(0, 10) !== birthDate
+    ) {
+      return res.status(400).json({ message: "Enter a valid date of birth." });
+    }
+  }
+
+  const { data, error } = await supabase
+    .from("candidates")
+    .insert({
+      first_name: firstName,
+      last_name: lastName || null,
+      date_of_birth: birthDate || null,
+      phone: phone || null,
+      email: email || null,
+    })
+    .select("id, candidate_code")
+    .single();
+
+  if (error?.code === "23505") {
+    return res.status(409).json({
+      message: "A candidate with the same email or phone may already exist.",
+    });
+  }
+
+  if (error) {
+    console.error("Candidate creation failed:", error.code);
+    return res.status(500).json({ message: "Could not add the candidate." });
+  }
+
+  return res.status(201).json({ success: true, candidate: data });
+}
     const { data, error } = await supabase
       .from("candidates")
       .select(`

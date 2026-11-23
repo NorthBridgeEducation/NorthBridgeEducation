@@ -8,7 +8,15 @@ import {
 //   Languages,
   Search,
 } from "lucide-react";
-
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -53,7 +61,10 @@ export function CandidateDatabaseTestPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
-
+  const [addOpen, setAddOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [addError, setAddError] = useState("");
+  const [addNotice, setAddNotice] = useState("");
   const loadCandidates = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -88,7 +99,39 @@ export function CandidateDatabaseTestPage() {
   useEffect(() => {
     void loadCandidates();
   }, [loadCandidates]);
+async function addCandidate(event: FormEvent<HTMLFormElement>) {
+  event.preventDefault();
+  if (saving) return;
 
+  const fields = new FormData(event.currentTarget);
+  setSaving(true);
+  setAddError("");
+  setAddNotice("");
+
+  try {
+    const response = await fetch("/api/admin/candidates", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(Object.fromEntries(fields)),
+    });
+
+    const result = await response.json().catch(() => null);
+
+    if (!response.ok || !result?.success) {
+      throw new Error(result?.message ?? "Could not add the candidate.");
+    }
+
+    setAddOpen(false);
+    setSearch("");
+    setAddNotice("Candidate added successfully.");
+    await loadCandidates();
+  } catch (error) {
+    setAddError(error instanceof Error ? error.message : "Could not add the candidate.");
+  } finally {
+    setSaving(false);
+  }
+}
   const filteredCandidates = candidates.filter((candidate) => {
     const name = [
       candidate.first_name,
@@ -129,15 +172,71 @@ export function CandidateDatabaseTestPage() {
           </p>
         </div>
 
-        <Button
-          onClick={loadCandidates}
-          disabled={loading}
-        >
-          <RefreshCw className={loading ? "animate-spin" : ""} />
-          Refresh Database
-        </Button>
-      </div>
+        <div className="flex flex-wrap gap-2">
+  <Button type="button" variant="outline" onClick={loadCandidates} disabled={loading}>
+    <RefreshCw className={loading ? "animate-spin" : ""} />
+    Refresh Database
+  </Button>
 
+  <Dialog
+    open={addOpen}
+    onOpenChange={(open) => {
+      if (saving) return;
+      setAddOpen(open);
+      setAddError("");
+    }}
+  >
+    <DialogTrigger asChild>
+      <Button type="button">
+        <UserPlus className="size-4" aria-hidden="true" />
+        Add Candidate
+      </Button>
+    </DialogTrigger>
+
+    <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
+      <DialogHeader>
+        <DialogTitle>Add Candidate</DialogTitle>
+        <DialogDescription>
+          First name is required. You can fill in the other details later.
+        </DialogDescription>
+      </DialogHeader>
+
+      <form onSubmit={addCandidate} className="space-y-4">
+        <fieldset disabled={saving} className="grid min-w-0 gap-4 sm:grid-cols-2">
+          {[
+            { name: "first_name", label: "First name", type: "text", required: true },
+            { name: "last_name", label: "Last name", type: "text" },
+            { name: "date_of_birth", label: "Date of birth", type: "date" },
+            { name: "phone", label: "Phone", type: "tel" },
+            { name: "email", label: "Email", type: "email" },
+          ].map((field) => (
+            <label key={field.name} className="block min-w-0 space-y-1.5 text-sm font-medium">
+              <span>{field.label}{field.required ? " *" : ""}</span>
+              <Input name={field.name} type={field.type} required={field.required} />
+            </label>
+          ))}
+        </fieldset>
+
+        {addError && <p role="alert" className="text-sm text-destructive">{addError}</p>}
+
+        <DialogFooter>
+          <Button type="button" variant="outline" disabled={saving} onClick={() => setAddOpen(false)}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={saving}>
+            {saving ? "Adding…" : "Add Candidate"}
+          </Button>
+        </DialogFooter>
+      </form>
+    </DialogContent>
+  </Dialog>
+</div>
+      </div>
+{addNotice && (
+  <p role="status" className="rounded-lg border bg-muted/40 px-4 py-3 text-sm">
+    {addNotice}
+  </p>
+)}
       {/* Statistics */}
       <div className="grid gap-4 sm:grid-cols-2">
         <Card className="gap-3 py-5 shadow-none">
