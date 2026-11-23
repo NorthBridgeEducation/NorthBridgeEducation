@@ -9,14 +9,13 @@ export default async function handler(
 ) {
   res.setHeader("Cache-Control", "no-store");
 
-  if (req.method !== "GET") {
-    res.setHeader("Allow", "GET");
-
-    return res.status(405).json({
-      success: false,
-      message: "Method not allowed.",
-    });
-  }
+ if (req.method !== "GET" && req.method !== "POST") {
+  res.setHeader("Allow", "GET, POST");
+  return res.status(405).json({
+    success: false,
+    message: "Method not allowed.",
+  });
+}
 
   // Keep existing custom admin authentication
   if (!isAdminAuthenticated(req)) {
@@ -46,7 +45,68 @@ export default async function handler(
         autoRefreshToken: false,
       },
     });
+    if (req.method === "POST") {
+  const contentType = req.headers["content-type"]?.split(";")[0].trim();
 
+  if (contentType !== "application/json") {
+    return res.status(415).json({
+      success: false,
+      message: "Send an application/json body.",
+    });
+  }
+
+  const draftId = req.body?.draft_id;
+
+  if (
+    typeof draftId !== "string" ||
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(draftId)
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid draft ID.",
+    });
+  }
+
+  const { data: candidateId, error } = await supabase.rpc(
+    "approve_candidate_draft",
+    { p_draft_id: draftId },
+  );
+
+  if (error) {
+    if (error.code === "P0002") {
+      return res.status(404).json({ success: false, message: "Draft not found." });
+    }
+
+    if (error.code === "23505") {
+      return res.status(409).json({
+        success: false,
+        message: "A candidate with this account, email or phone already exists.",
+      });
+    }
+
+    if (error.code === "22023") {
+      return res.status(400).json({ success: false, message: error.message });
+    }
+
+    if (["22P02", "22007", "22008", "23514"].includes(error.code)) {
+      return res.status(422).json({
+        success: false,
+        message: "Check the draft's dates, passing year and results before approving.",
+      });
+    }
+
+    console.error("Draft approval failed:", error.code);
+    return res.status(500).json({
+      success: false,
+      message: "Could not approve the draft.",
+    });
+  }
+
+  return res.status(200).json({
+    success: true,
+    candidate_id: candidateId,
+  });
+}
     // Read-only: Fetch saved student drafts
     const { data, error } = await supabase
       .from("draft")

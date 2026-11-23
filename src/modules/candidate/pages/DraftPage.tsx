@@ -78,7 +78,8 @@ export function DraftPage() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [selectedDraft, setSelectedDraft] = useState<Draft | null>(null);
-
+  const [approving, setApproving] = useState(false);
+  const [approvalError, setApprovalError] = useState("");
   const loadDrafts = useCallback(async (refresh = false) => {
     if (refresh) setRefreshing(true);
     else setLoading(true);
@@ -146,7 +147,47 @@ export function DraftPage() {
   const approvedCount = drafts.filter(
     (draft) => draft.status === "approved",
   ).length;
+  async function approveDraft(draft: Draft) {
+  if (approving || draft.status === "approved") return;
 
+  setApproving(true);
+  setApprovalError("");
+
+  try {
+    const response = await fetch("/api/admin/drafts", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ draft_id: draft.id }),
+    });
+
+    const result = await response.json().catch(() => null);
+
+    if (!response.ok || !result?.success || !result.candidate_id) {
+      throw new Error(result?.message ?? "Could not approve the draft.");
+    }
+
+    const approvedDraft: Draft = {
+      ...draft,
+      status: "approved",
+      candidate_id: result.candidate_id,
+    };
+
+    setDrafts((previous) =>
+      previous.map((row) => row.id === draft.id ? approvedDraft : row),
+    );
+
+    setSelectedDraft((current) =>
+      current?.id === draft.id ? approvedDraft : current,
+    );
+  } catch (error) {
+    setApprovalError(
+      error instanceof Error ? error.message : "Could not approve the draft.",
+    );
+  } finally {
+    setApproving(false);
+  }
+}
   return (
     <section className="space-y-6">
       {/* Page Header */}
@@ -323,7 +364,10 @@ export function DraftPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => setSelectedDraft(draft)}
+                            onClick={() => {
+  setApprovalError("");
+  setSelectedDraft(draft);
+}}
                           >
                             <Eye className="size-4" />
                             View
@@ -395,14 +439,33 @@ export function DraftPage() {
               ))}
             </div>
 
-            <div className="mt-6 flex justify-end border-t pt-4">
-              <Button
-                variant="outline"
-                onClick={() => setSelectedDraft(null)}
-              >
-                Close
-              </Button>
-            </div>
+            <div className="mt-6 space-y-3 border-t pt-4">
+  {approvalError && (
+    <p role="alert" className="text-sm text-destructive">{approvalError}</p>
+  )}
+
+  {selectedDraft.status === "approved" && (
+    <p role="status" className="text-sm text-muted-foreground">
+      {selectedDraft.candidate_id ? "Approved. Candidate created." : "Approved."}
+    </p>
+  )}
+
+  <div className="flex flex-wrap justify-end gap-2">
+    <Button variant="outline" onClick={() => setSelectedDraft(null)}>
+      Close
+    </Button>
+
+    {(!selectedDraft.status || selectedDraft.status === "draft") && (
+      <Button
+        type="button"
+        disabled={approving}
+        onClick={() => void approveDraft(selectedDraft)}
+      >
+        {approving ? "Approving…" : "Approve & Create Candidate"}
+      </Button>
+    )}
+  </div>
+</div>
           </div>
         </div>
       )}
