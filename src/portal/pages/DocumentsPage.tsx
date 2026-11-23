@@ -11,7 +11,8 @@ import {
   FILE_TYPES,
   formatFileSize,
   type FileRecord,
-} from "@/modules/files/file-record"
+} from "@/modules/files/file-record.ts"
+
 
 const selectClass = "h-9 w-full rounded-md border bg-background px-3 text-sm"
 
