@@ -120,6 +120,7 @@ function FieldInput({
     <label className="block min-w-0 space-y-1.5 text-sm font-medium">
       <span>{field.label}</span>
       <Input
+        className="min-h-11 text-base sm:text-sm"
         type={field.type ?? "text"}
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -151,6 +152,7 @@ type ProfileFormProps = {
     level: EducationLevel,
     entry: EducationEntry,
   ) => Promise<EducationEntry>;
+  showCertificateDemos?: boolean;
   draft?: boolean;
   readOnly?: boolean;
 };
@@ -163,6 +165,7 @@ export function ProfileForm({
   initialEducation,
   savePersonal,
   saveEducation,
+  showCertificateDemos = false,
   draft = false,
   readOnly = false,
 }: ProfileFormProps) {
@@ -237,13 +240,14 @@ export function ProfileForm({
 
   function sectionHeader(title: string, section: string, restore: () => void) {
     return (
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-center justify-between gap-3">
         <h3 className="text-base font-semibold">{title}</h3>
         {!readOnly && edit?.section !== section && (
           <Button
             type="button"
             variant="outline"
             size="sm"
+            className="min-h-11 px-4 sm:min-h-9"
             disabled={disabled || edit !== null}
             aria-label={`Edit ${title}`}
             onClick={() => {
@@ -263,13 +267,14 @@ export function ProfileForm({
       <>
         {feedback(section)}
         {!readOnly && edit?.section === section && (
-          <div className="flex flex-wrap gap-2">
-            <Button type="submit" disabled={disabled}>
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:flex sm:flex-wrap">
+            <Button type="submit" className="min-h-11 whitespace-normal sm:min-h-9" disabled={disabled}>
               {saving === section ? "Saving…" : label}
             </Button>
             <Button
               type="button"
               variant="outline"
+              className="min-h-11 sm:min-h-9"
               disabled={disabled}
               onClick={() => {
                 edit.restore();
@@ -297,7 +302,7 @@ export function ProfileForm({
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto w-full max-w-4xl space-y-4 sm:space-y-6">
       <header className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
         <p className="text-sm text-muted-foreground">{description}</p>
@@ -311,15 +316,15 @@ export function ProfileForm({
       >
         {sectionHeader("Personal Info", "personal", () => setPersonal(personal))}
         {!readOnly && edit?.section === "personal" ? (
-          <fieldset disabled={disabled} className="grid gap-4 sm:grid-cols-2">
+          <fieldset disabled={disabled} className="min-w-0 grid gap-x-4 gap-y-3 sm:grid-cols-2">
             {personalInputs(personalFields)}
             <label className="block min-w-0 space-y-1.5 text-sm font-medium">
               <span>Account email</span>
-              <Input type="email" value={email} readOnly />
+              <Input className="min-h-11 text-base sm:text-sm" type="email" value={email} readOnly />
             </label>
           </fieldset>
         ) : (
-          <dl className="grid gap-4 sm:grid-cols-2">
+          <dl className="min-w-0 grid gap-x-4 gap-y-3 sm:grid-cols-2">
             {personalFields.map(({ key, label }) => displayField(label, personal[key]))}
             {displayField("Account email", email)}
           </dl>
@@ -358,7 +363,7 @@ export function ProfileForm({
                 )}
 
                 {!readOnly && edit?.section === section ? (
-                  <fieldset disabled={disabled} className="grid gap-4 sm:grid-cols-2">
+                  <fieldset disabled={disabled} className="min-w-0 grid gap-x-4 gap-y-3 sm:grid-cols-2">
                     {educationFields.map((field) => (
                       <FieldInput
                         key={field.key}
@@ -378,11 +383,19 @@ export function ProfileForm({
                     ))}
                   </fieldset>
                 ) : (
-                  <dl className="grid gap-4 sm:grid-cols-2">
+                  <dl className="min-w-0 grid gap-x-4 gap-y-3 sm:grid-cols-2">
                     {educationFields.map(({ key, label }) =>
                       displayField(label, entry.values[key]),
                     )}
                   </dl>
+                )}
+
+                {showCertificateDemos && !readOnly && (level === "SSC" || level === "HSC") && (
+                  <DemoCertificateUpload
+                    level={level}
+                    editing={edit?.section === section}
+                    disabled={disabled}
+                  />
                 )}
 
                 {sectionActions(
@@ -404,11 +417,11 @@ export function ProfileForm({
       >
         {sectionHeader("Other Info", "other", () => setPersonal(personal))}
         {!readOnly && edit?.section === "other" ? (
-          <fieldset disabled={disabled} className="grid gap-4 sm:grid-cols-2">
+          <fieldset disabled={disabled} className="min-w-0 grid gap-x-4 gap-y-3 sm:grid-cols-2">
             {personalInputs(otherFields)}
           </fieldset>
         ) : (
-          <dl className="grid gap-4 sm:grid-cols-2">
+          <dl className="min-w-0 grid gap-x-4 gap-y-3 sm:grid-cols-2">
             {otherFields.map(({ key, label }) => displayField(label, personal[key]))}
           </dl>
         )}
@@ -419,39 +432,65 @@ export function ProfileForm({
   );
 }
 
-function DemoFileUpload() {
-  const [file, setFile] = useState<File | null>(null);
+function DemoCertificateUpload({
+  level,
+  editing,
+  disabled,
+}: {
+  level: "SSC" | "HSC";
+  editing: boolean;
+  disabled: boolean;
+}) {
   const [demoFileName, setDemoFileName] = useState("");
 
   return (
-    <form
-      className="mx-auto max-w-4xl space-y-4 rounded-xl border bg-card p-4 sm:p-6"
-      onSubmit={(event: FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        if (file) setDemoFileName(file.name);
-      }}
-    >
-      <h2 className="text-lg font-semibold">File Upload Demo</h2>
-      <p className="text-sm text-muted-foreground">
-        Choose a file to try the upload flow locally. Files are never sent to a server.
+    <div className="min-w-0 space-y-2 border-t pt-3">
+      <h4 className="text-sm font-medium">{level} certificate</h4>
+      <p aria-live="polite" className="break-all text-sm text-muted-foreground">
+        {demoFileName || "No certificate uploaded"}
       </p>
-      <label className="block space-y-1.5 text-sm font-medium">
-        <span>Choose a file</span>
-        <Input
-          type="file"
-          onChange={(event) => {
-            setFile(event.currentTarget.files?.[0] ?? null);
-            setDemoFileName("");
-          }}
+      {editing && (
+        <DemoCertificatePicker
+          level={level}
+          disabled={disabled}
+          onUpload={setDemoFileName}
         />
-      </label>
-      <Button type="submit" disabled={!file}>Simulate upload</Button>
-      {demoFileName && (
-        <p role="status" className="break-words text-sm text-muted-foreground">
-          Demo upload complete for {demoFileName}.
-        </p>
       )}
-    </form>
+    </div>
+  );
+}
+
+function DemoCertificatePicker({
+  level,
+  disabled,
+  onUpload,
+}: {
+  level: "SSC" | "HSC";
+  disabled: boolean;
+  onUpload: (fileName: string) => void;
+}) {
+  const [selectedName, setSelectedName] = useState("");
+
+  return (
+    <fieldset disabled={disabled} className="min-w-0 space-y-2">
+      <Input
+        type="file"
+        aria-label={`Choose ${level} certificate`}
+        accept=".pdf,.jpg,.jpeg,.png"
+        className="min-h-11 w-full min-w-0 text-base sm:text-sm"
+        onChange={(event) => setSelectedName(event.currentTarget.files?.[0]?.name ?? "")}
+      />
+      <Button
+        type="button"
+        variant="outline"
+        className="min-h-11 w-full sm:min-h-9 sm:w-auto"
+        disabled={disabled || !selectedName}
+        onClick={() => onUpload(selectedName)}
+      >
+        Simulate upload
+      </Button>
+      <p className="text-xs text-muted-foreground">Demo only. Files stay on this device.</p>
+    </fieldset>
   );
 }
 
@@ -609,17 +648,15 @@ export function CandidateProfilePage({
   if (!profile) return <p role="status">Loading candidate profile…</p>;
 
   return (
-    <div className="space-y-6">
-      <ProfileForm
-        title="My Profile"
-        description={profile.code ? `Candidate ID: ${profile.code}` : "Manage your candidate profile."}
-        email={email}
-        initialPersonal={profile.personal}
-        initialEducation={profile.education}
-        savePersonal={savePersonal}
-        saveEducation={saveEducation}
-      />
-      <DemoFileUpload />
-    </div>
+    <ProfileForm
+      title="My Profile"
+      description={profile.code ? `Candidate ID: ${profile.code}` : "Manage your candidate profile."}
+      email={email}
+      initialPersonal={profile.personal}
+      initialEducation={profile.education}
+      savePersonal={savePersonal}
+      saveEducation={saveEducation}
+      showCertificateDemos
+    />
   );
 }
