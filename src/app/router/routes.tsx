@@ -6,7 +6,7 @@ import { ProtectedRoute } from "./ProtectedRoute";
 import { LoginPage } from "../../auth/pages/LoginPage";
 import { DashboardPage } from "@/modules/dashboard/pages/DashboardPage";
 import { PublicLeadPage } from "@/modules/lead/pages/PublicLeadPage";
-import { PublicLandingPage } from "@/modules/public/pages/PublicLandingPage";
+import { PublicLandingPage } from "@/modules/public/pages/PublicLandingPage/PublicLandingPage";
 import { ComingSoonPage } from "@/modules/public/pages/UnderConstructionPage";
 import { CandidatePage } from "@/modules/candidate/pages/CandidatePage";
 import { LeadPage } from "@/modules/lead/pages/LeadPage";
