@@ -22,7 +22,7 @@ export function StudentLoginPage() {
       if (!mounted) return;
 
       if (!error && data.session) {
-        navigate("/portal", { replace: true });
+        navigate("/portal/profile", { replace: true });
         return;
       }
     } catch (error) {
@@ -75,7 +75,7 @@ export function StudentLoginPage() {
       return;
     }
 
-    navigate("/portal", { replace: true });
+    navigate("/portal/profile", { replace: true });
   }
 if (checkingSession) {
   return (
