@@ -3,6 +3,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase/client";
+import { DraftDocumentsStep } from "./DraftDocumentsStep";
 import {
   educationLevels,
   readEducationInfo,
@@ -13,9 +14,13 @@ import {
 } from "./CandidateProfilePage";
 
 const steps = [
-  { title: "Personal Info", description: "Name, birth date and contact number" },
+  {
+    title: "Personal Info",
+    description: "Name, birth date and contact number",
+  },
   { title: "Education", description: "SSC, HSC and Bachelor" },
   { title: "Other Info", description: "Identity, family and address" },
+  { title: "Documents", description: "Optional supporting documents" },
 ] as const;
 
 type Field<K extends string> = {
@@ -36,7 +41,11 @@ const otherFields: Field<keyof PersonalInfo>[] = [
   { key: "gender", label: "Gender" },
   { key: "nid_number", label: "NID number" },
   { key: "passport_date_of_issue", label: "Passport issue date", type: "date" },
-  { key: "passport_date_of_expiry", label: "Passport expiry date", type: "date" },
+  {
+    key: "passport_date_of_expiry",
+    label: "Passport expiry date",
+    type: "date",
+  },
   { key: "place_birth", label: "Place of birth" },
   { key: "fathers_name", label: "Father’s name" },
   { key: "mothers_name", label: "Mother’s name" },
@@ -93,7 +102,10 @@ function FieldGrid<K extends string>({
     <div className="grid gap-4 sm:grid-cols-2">
       {fields.map(({ key, label, type }) => (
         <label key={key} className="min-w-0 space-y-1.5 text-sm font-medium">
-          <span>{label}{key === "given_name" ? " *" : ""}</span>
+          <span>
+            {label}
+            {key === "given_name" ? " *" : ""}
+          </span>
           <Input
             type={type ?? "text"}
             value={values[key]}
@@ -200,7 +212,8 @@ export function DraftProfilePage({ userId, email }: DraftProfileProps) {
           .maybeSingle();
 
         if (error) throw error;
-        if (!data) throw new Error("This draft could not be updated. Reload the page.");
+        if (!data)
+          throw new Error("This draft could not be updated. Reload the page.");
       } else {
         const { error } = await supabase.from("draft").insert({
           ...changes,
@@ -214,33 +227,51 @@ export function DraftProfilePage({ userId, email }: DraftProfileProps) {
       setDraft({
         ...draft,
         exists: true,
-        personal: step === 1
-          ? draft.personal
-          : readPersonalInfo({ ...draft.personal, ...sectionValues }),
+        personal:
+          step === 1
+            ? draft.personal
+            : readPersonalInfo({ ...draft.personal, ...sectionValues }),
         education: step === 1 ? education : draft.education,
       });
 
       if (step < steps.length - 1) setStep(step + 1);
       setNotice(`${steps[step].title} saved to your draft.`);
     } catch (error) {
-      if (error && typeof error === "object" && "code" in error && error.code === "23505") {
+      if (
+        error &&
+        typeof error === "object" &&
+        "code" in error &&
+        error.code === "23505"
+      ) {
         setSaveError("A draft already exists. Reload the page before saving.");
       } else {
-        setSaveError(error instanceof Error ? error.message : "Could not save your draft.");
+        setSaveError(
+          error instanceof Error ? error.message : "Could not save your draft.",
+        );
       }
     } finally {
       setSaving(false);
     }
   }
 
-  if (loadError) return <p role="alert" className="text-destructive">{loadError}</p>;
+  if (loadError)
+    return (
+      <p role="alert" className="text-destructive">
+        {loadError}
+      </p>
+    );
   if (!draft) return <p role="status">Loading your profile draft…</p>;
 
-  const savedLevels = educationLevels.filter((level) => hasEducation(draft.education[level]));
+  const savedLevels = educationLevels.filter((level) =>
+    hasEducation(draft.education[level]),
+  );
   const sectionStatus = [
     draft.personal.given_name.trim() ? "Saved" : "Not added",
     `${savedLevels.length} of ${educationLevels.length} added`,
-    otherFields.some(({ key }) => draft.personal[key].trim()) ? "Saved" : "Not added",
+    otherFields.some(({ key }) => draft.personal[key].trim())
+      ? "Saved"
+      : "Not added",
+    "Optional",
   ];
 
   function changePersonal(key: keyof PersonalInfo, value: string) {
@@ -251,7 +282,9 @@ export function DraftProfilePage({ userId, email }: DraftProfileProps) {
   return (
     <div className="mx-auto max-w-4xl space-y-5">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">My Profile Draft</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          My Profile Draft
+        </h1>
         <p className="text-sm text-muted-foreground">
           {draft.approved
             ? "Your draft has been approved. You can review the saved information below."
@@ -260,7 +293,7 @@ export function DraftProfilePage({ userId, email }: DraftProfileProps) {
       </header>
 
       <nav aria-label="Profile draft steps">
-        <ol className="grid gap-2 sm:grid-cols-3">
+        <ol className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           {steps.map(({ title }, index) => (
             <li key={title}>
               <button
@@ -271,14 +304,18 @@ export function DraftProfilePage({ userId, email }: DraftProfileProps) {
                 className={[
                   "flex w-full items-center gap-3 rounded-xl border p-3 text-left",
                   "focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-50",
-                  step === index ? "border-primary bg-primary/5" : "bg-card hover:bg-muted/60",
+                  step === index
+                    ? "border-primary bg-primary/5"
+                    : "bg-card hover:bg-muted/60",
                 ].join(" ")}
               >
                 <span
                   aria-hidden="true"
                   className={[
                     "flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold",
-                    step === index ? "bg-primary text-primary-foreground" : "bg-muted",
+                    step === index
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted",
                   ].join(" ")}
                 >
                   {index + 1}
@@ -296,94 +333,131 @@ export function DraftProfilePage({ userId, email }: DraftProfileProps) {
         </ol>
       </nav>
 
-      <form
-        key={step}
-        onSubmit={saveStep}
-        aria-labelledby="draft-step-heading"
-        className="space-y-5 rounded-xl border bg-card p-4 sm:p-6"
-      >
-        <div>
-          <h2 id="draft-step-heading" className="text-lg font-semibold">
-            {steps[step].title}
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            {steps[step].description}
-          </p>
-        </div>
+      {notice && (
+        <p role="status" className="text-sm text-muted-foreground">
+          {notice}
+        </p>
+      )}
 
-        <fieldset disabled={saving || draft.approved} className="min-w-0 space-y-4">
-          {step === 0 && (
-            <>
-              <FieldGrid fields={personalFields} values={personal} onChange={changePersonal} />
-              <label className="block space-y-1.5 text-sm font-medium">
-                <span>Account email</span>
-                <Input type="email" value={email} readOnly />
-              </label>
-            </>
-          )}
-
-          {step === 1 && educationLevels.map((level) => {
-            const changed = educationFields.some(
-              ({ key }) => education[level][key] !== draft.education[level][key],
-            );
-
-            return (
-              <section key={level} className="space-y-4 rounded-lg border p-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="font-semibold">{level}</h3>
-                  <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium">
-                    {changed ? "Unsaved changes" : savedLevels.includes(level) ? "Saved" : "Not added"}
-                  </span>
-                </div>
-
-                <FieldGrid
-                  fields={educationFields}
-                  values={education[level]}
-                  onChange={(key, value) => {
-                    setEducation((previous) => ({
-                      ...previous,
-                      [level]: { ...previous[level], [key]: value },
-                    }));
-                    setNotice("");
-                  }}
-                />
-              </section>
-            );
-          })}
-
-          {step === 2 && (
-            <FieldGrid fields={otherFields} values={personal} onChange={changePersonal} />
-          )}
-        </fieldset>
-
-        {saveError && (
-          <p role="alert" className="text-sm text-destructive">{saveError}</p>
-        )}
-        {notice && (
-          <p role="status" className="text-sm text-muted-foreground">{notice}</p>
-        )}
-
-        {(step > 0 || !draft.approved) && (
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
-            {step > 0 && (
-              <Button
-                type="button"
-                variant="outline"
-                disabled={saving}
-                onClick={() => changeStep(step - 1)}
-              >
-                Back
-              </Button>
-            )}
-
-            {!draft.approved && (
-              <Button type="submit" disabled={saving} className="ml-auto">
-                {saving ? "Saving…" : step === 2 ? "Save draft" : "Save and continue"}
-              </Button>
-            )}
+      {step === 3 ? (
+        <DraftDocumentsStep
+          userId={userId}
+          readOnly={draft.approved}
+          onBack={() => changeStep(2)}
+        />
+      ) : (
+        <form
+          key={step}
+          onSubmit={saveStep}
+          aria-labelledby="draft-step-heading"
+          className="space-y-5 rounded-xl border bg-card p-4 sm:p-6"
+        >
+          <div>
+            <h2 id="draft-step-heading" className="text-lg font-semibold">
+              {steps[step].title}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              {steps[step].description}
+            </p>
           </div>
-        )}
-      </form>
+
+          <fieldset
+            disabled={saving || draft.approved}
+            className="min-w-0 space-y-4"
+          >
+            {step === 0 && (
+              <>
+                <FieldGrid
+                  fields={personalFields}
+                  values={personal}
+                  onChange={changePersonal}
+                />
+                <label className="block space-y-1.5 text-sm font-medium">
+                  <span>Account email</span>
+                  <Input type="email" value={email} readOnly />
+                </label>
+              </>
+            )}
+
+            {step === 1 &&
+              educationLevels.map((level) => {
+                const changed = educationFields.some(
+                  ({ key }) =>
+                    education[level][key] !== draft.education[level][key],
+                );
+
+                return (
+                  <section
+                    key={level}
+                    className="space-y-4 rounded-lg border p-4"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h3 className="font-semibold">{level}</h3>
+                      <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium">
+                        {changed
+                          ? "Unsaved changes"
+                          : savedLevels.includes(level)
+                            ? "Saved"
+                            : "Not added"}
+                      </span>
+                    </div>
+
+                    <FieldGrid
+                      fields={educationFields}
+                      values={education[level]}
+                      onChange={(key, value) => {
+                        setEducation((previous) => ({
+                          ...previous,
+                          [level]: { ...previous[level], [key]: value },
+                        }));
+                        setNotice("");
+                      }}
+                    />
+                  </section>
+                );
+              })}
+
+            {step === 2 && (
+              <FieldGrid
+                fields={otherFields}
+                values={personal}
+                onChange={changePersonal}
+              />
+            )}
+          </fieldset>
+
+          {saveError && (
+            <p role="alert" className="text-sm text-destructive">
+              {saveError}
+            </p>
+          )}
+
+          {(step > 0 || !draft.approved) && (
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+              {step > 0 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={saving}
+                  onClick={() => changeStep(step - 1)}
+                >
+                  Back
+                </Button>
+              )}
+
+              {!draft.approved && (
+                <Button type="submit" disabled={saving} className="ml-auto">
+                  {saving
+                    ? "Saving…"
+                    : step === 2
+                      ? "Save draft and continue"
+                      : "Save and continue"}
+                </Button>
+              )}
+            </div>
+          )}
+        </form>
+      )}
     </div>
   );
 }
