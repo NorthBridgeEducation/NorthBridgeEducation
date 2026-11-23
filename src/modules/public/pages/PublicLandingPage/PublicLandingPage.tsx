@@ -4,7 +4,6 @@ import {
   ArrowRight,
   ArrowUpRight,
   GraduationCap,
-  Globe2,
   BookOpen,
   Plane,
   ShieldCheck,
