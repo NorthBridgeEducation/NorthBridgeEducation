@@ -168,6 +168,10 @@ export function ProfileForm({
 }: ProfileFormProps) {
   const [personal, setPersonal] = useState(initialPersonal);
   const [education, setEducation] = useState(initialEducation);
+  const [edit, setEdit] = useState<{
+    section: string;
+    restore: () => void;
+  } | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
   const [notice, setNotice] = useState<{
     section: string;
@@ -181,13 +185,14 @@ export function ProfileForm({
     save: () => Promise<void>,
   ) {
     event.preventDefault();
-    if (saving || readOnly) return;
+    if (saving || readOnly || edit?.section !== section) return;
 
     setSaving(section);
     setNotice(null);
 
     try {
       await save();
+      setEdit(null);
       setNotice({
         section,
         text: draft ? "Draft saved." : "Changes saved.",
@@ -230,6 +235,67 @@ export function ProfileForm({
   const disabled = readOnly || saving !== null;
   const buttonLabel = draft ? "Save draft" : "Save changes";
 
+  function sectionHeader(title: string, section: string, restore: () => void) {
+    return (
+      <div className="flex items-start justify-between gap-4">
+        <h3 className="text-base font-semibold">{title}</h3>
+        {!readOnly && edit?.section !== section && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={disabled || edit !== null}
+            aria-label={`Edit ${title}`}
+            onClick={() => {
+              setNotice(null);
+              setEdit({ section, restore });
+            }}
+          >
+            Edit
+          </Button>
+        )}
+      </div>
+    );
+  }
+
+  function sectionActions(section: string, label = buttonLabel) {
+    return (
+      <>
+        {feedback(section)}
+        {!readOnly && edit?.section === section && (
+          <div className="flex flex-wrap gap-2">
+            <Button type="submit" disabled={disabled}>
+              {saving === section ? "Saving…" : label}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={disabled}
+              onClick={() => {
+                edit.restore();
+                setEdit(null);
+                setNotice(null);
+              }}
+            >
+              Cancel
+            </Button>
+          </div>
+        )}
+      </>
+    );
+  }
+
+  function displayField(label: string, value: string) {
+    return (
+      <div key={label} className="min-w-0 space-y-1">
+        <dt className="text-sm text-muted-foreground">{label}</dt>
+        <dd className="whitespace-pre-wrap break-words text-sm font-medium">
+          {value || "—"}
+        </dd>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <header className="space-y-1">
@@ -243,22 +309,23 @@ export function ProfileForm({
           void saveSection(event, "personal", () => savePersonal(personal))
         }
       >
-        <h2 className="text-lg font-semibold">Personal Info</h2>
-
-        <fieldset disabled={disabled} className="grid gap-4 sm:grid-cols-2">
-          {personalInputs(personalFields)}
-          <label className="block min-w-0 space-y-1.5 text-sm font-medium">
-            <span>Account email</span>
-            <Input type="email" value={email} readOnly />
-          </label>
-        </fieldset>
-
-        {feedback("personal")}
-        {!readOnly && (
-          <Button type="submit" disabled={disabled}>
-            {saving === "personal" ? "Saving…" : buttonLabel}
-          </Button>
+        {sectionHeader("Personal Info", "personal", () => setPersonal(personal))}
+        {!readOnly && edit?.section === "personal" ? (
+          <fieldset disabled={disabled} className="grid gap-4 sm:grid-cols-2">
+            {personalInputs(personalFields)}
+            <label className="block min-w-0 space-y-1.5 text-sm font-medium">
+              <span>Account email</span>
+              <Input type="email" value={email} readOnly />
+            </label>
+          </fieldset>
+        ) : (
+          <dl className="grid gap-4 sm:grid-cols-2">
+            {personalFields.map(({ key, label }) => displayField(label, personal[key]))}
+            {displayField("Account email", email)}
+          </dl>
         )}
+
+        {sectionActions("personal")}
       </form>
 
       <section className="space-y-4">
@@ -284,39 +351,44 @@ export function ProfileForm({
                   })
                 }
               >
-                <h3 className="font-semibold">
-                  {level}
-                  {education[level].length > 1 ? ` — Record ${index + 1}` : ""}
-                </h3>
+                {sectionHeader(
+                  education[level].length > 1 ? `${level} — Record ${index + 1}` : level,
+                  section,
+                  () => setEducation(education),
+                )}
 
-                <fieldset disabled={disabled} className="grid gap-4 sm:grid-cols-2">
-                  {educationFields.map((field) => (
-                    <FieldInput
-                      key={field.key}
-                      field={field}
-                      value={entry.values[field.key]}
-                      onChange={(value) =>
-                        setEducation((previous) => ({
-                          ...previous,
-                          [level]: previous[level].map((item, itemIndex) =>
-                            itemIndex === index
-                              ? { ...item, values: { ...item.values, [field.key]: value } }
-                              : item,
-                          ),
-                        }))
-                      }
-                    />
-                  ))}
-                </fieldset>
+                {!readOnly && edit?.section === section ? (
+                  <fieldset disabled={disabled} className="grid gap-4 sm:grid-cols-2">
+                    {educationFields.map((field) => (
+                      <FieldInput
+                        key={field.key}
+                        field={field}
+                        value={entry.values[field.key]}
+                        onChange={(value) =>
+                          setEducation((previous) => ({
+                            ...previous,
+                            [level]: previous[level].map((item, itemIndex) =>
+                              itemIndex === index
+                                ? { ...item, values: { ...item.values, [field.key]: value } }
+                                : item,
+                            ),
+                          }))
+                        }
+                      />
+                    ))}
+                  </fieldset>
+                ) : (
+                  <dl className="grid gap-4 sm:grid-cols-2">
+                    {educationFields.map(({ key, label }) =>
+                      displayField(label, entry.values[key]),
+                    )}
+                  </dl>
+                )}
 
-                {feedback(section)}
-                {!readOnly && (
-                  <Button type="submit" disabled={disabled}>
-                    {saving === section
-                      ? "Saving…"
-                      : draft ? "Save education draft"
-                      : entry.id ? "Save education changes" : `Add ${level}`}
-                  </Button>
+                {sectionActions(
+                  section,
+                  draft ? "Save education draft"
+                    : entry.id ? "Save education changes" : `Add ${level}`,
                 )}
               </form>
             );
@@ -330,20 +402,56 @@ export function ProfileForm({
           void saveSection(event, "other", () => savePersonal(personal))
         }
       >
-        <h2 className="text-lg font-semibold">Other Info</h2>
-
-        <fieldset disabled={disabled} className="grid gap-4 sm:grid-cols-2">
-          {personalInputs(otherFields)}
-        </fieldset>
-
-        {feedback("other")}
-        {!readOnly && (
-          <Button type="submit" disabled={disabled}>
-            {saving === "other" ? "Saving…" : buttonLabel}
-          </Button>
+        {sectionHeader("Other Info", "other", () => setPersonal(personal))}
+        {!readOnly && edit?.section === "other" ? (
+          <fieldset disabled={disabled} className="grid gap-4 sm:grid-cols-2">
+            {personalInputs(otherFields)}
+          </fieldset>
+        ) : (
+          <dl className="grid gap-4 sm:grid-cols-2">
+            {otherFields.map(({ key, label }) => displayField(label, personal[key]))}
+          </dl>
         )}
+
+        {sectionActions("other")}
       </form>
     </div>
+  );
+}
+
+function DemoFileUpload() {
+  const [file, setFile] = useState<File | null>(null);
+  const [demoFileName, setDemoFileName] = useState("");
+
+  return (
+    <form
+      className="mx-auto max-w-4xl space-y-4 rounded-xl border bg-card p-4 sm:p-6"
+      onSubmit={(event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        if (file) setDemoFileName(file.name);
+      }}
+    >
+      <h2 className="text-lg font-semibold">File Upload Demo</h2>
+      <p className="text-sm text-muted-foreground">
+        Choose a file to try the upload flow locally. Files are never sent to a server.
+      </p>
+      <label className="block space-y-1.5 text-sm font-medium">
+        <span>Choose a file</span>
+        <Input
+          type="file"
+          onChange={(event) => {
+            setFile(event.currentTarget.files?.[0] ?? null);
+            setDemoFileName("");
+          }}
+        />
+      </label>
+      <Button type="submit" disabled={!file}>Simulate upload</Button>
+      {demoFileName && (
+        <p role="status" className="break-words text-sm text-muted-foreground">
+          Demo upload complete for {demoFileName}.
+        </p>
+      )}
+    </form>
   );
 }
 
@@ -501,14 +609,17 @@ export function CandidateProfilePage({
   if (!profile) return <p role="status">Loading candidate profile…</p>;
 
   return (
-    <ProfileForm
-      title="My Profile"
-      description={profile.code ? `Candidate ID: ${profile.code}` : "Manage your candidate profile."}
-      email={email}
-      initialPersonal={profile.personal}
-      initialEducation={profile.education}
-      savePersonal={savePersonal}
-      saveEducation={saveEducation}
-    />
+    <div className="space-y-6">
+      <ProfileForm
+        title="My Profile"
+        description={profile.code ? `Candidate ID: ${profile.code}` : "Manage your candidate profile."}
+        email={email}
+        initialPersonal={profile.personal}
+        initialEducation={profile.education}
+        savePersonal={savePersonal}
+        saveEducation={saveEducation}
+      />
+      <DemoFileUpload />
+    </div>
   );
 }
