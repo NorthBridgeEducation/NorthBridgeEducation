@@ -26,9 +26,7 @@ const destinations = [
   {
     name: "United States",
     code: "USA",
-    image:
-      "https://images.unsplash.com/photo-1498892158567-9eecf6f6b6e1?auto=format&fit=crop&w=900&q=85",
-  },
+    image: "https://images.unsplash.com/photo-1485871981521-5b1fd3805eee?auto=format&fit=crop&w=900&q=85", },
   {
     name: "Canada",
     code: "CA",
