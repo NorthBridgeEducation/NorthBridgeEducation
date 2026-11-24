@@ -1,20 +1,27 @@
 
 import { useEffect, useState, type FormEvent } from "react";
+
 import {
   ArrowRight,
+  ArrowLeft,
   GraduationCap,
-  Globe2,
-  UserRound,
   CheckCircle2,
+  Pencil,
+  UserRound,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase/client";
 
-import { EmptyState } from "../components/EmptyState";
-import { CandidateProfilePage } from "./CandidateProfilePage";
+import {
+  CandidateProfilePage,
+  readPersonalInfo,
+  type PersonalInfo,
+} from "./CandidateProfilePage";
+
 import { DraftProfilePage } from "./DraftProfilePage";
 
+// Available study destinations
 const countries = [
   {
     value: "SI",
@@ -28,6 +35,7 @@ const countries = [
   },
 ] as const;
 
+// Available degree levels
 const degrees = [
   {
     value: "bachelor",
@@ -61,8 +69,109 @@ type ProfileState =
       candidateId: string | null;
       hasDraft: boolean;
       preferences: Preferences | null;
+      personal: PersonalInfo;
+      destination: string;
+      degree: string;
     };
 
+// Fields displayed after profile information is saved
+const profileFields: {
+  key: keyof PersonalInfo;
+  label: string;
+}[] = [
+  { key: "date_of_birth", label: "Date of birth" },
+  { key: "gender", label: "Gender" },
+  { key: "number", label: "Phone number" },
+  { key: "passport_number", label: "Passport number" },
+  { key: "nid_number", label: "NID number" },
+  { key: "place_birth", label: "Place of birth" },
+  {
+    key: "passport_date_of_issue",
+    label: "Passport date of issue",
+  },
+  {
+    key: "passport_date_of_expiry",
+    label: "Passport date of expiry",
+  },
+  { key: "fathers_name", label: "Father's name" },
+  { key: "mothers_name", label: "Mother's name" },
+  { key: "permanent_address", label: "Permanent address" },
+];
+
+// Default profile avatar
+function ProfileAvatar() {
+  return (
+    <div className="flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-full bg-blue-100 sm:size-32">
+
+      <svg
+        viewBox="0 0 120 120"
+        className="size-full"
+        aria-hidden="true"
+      >
+        <rect
+          width="120"
+          height="120"
+          fill="#cce1fc"
+        />
+
+        <circle
+          cx="76"
+          cy="56"
+          r="53"
+          fill="#bcd6f5"
+        />
+
+        {/* Suit */}
+        <path
+          d="M9 120 L17 92 Q20 85 45 79 L75 79 Q102 85 105 95 L114 120Z"
+          fill="#315a78"
+        />
+
+        {/* Shirt */}
+        <path
+          d="M48 77 L60 90 L73 77 L83 120 L37 120Z"
+          fill="#f3f6f8"
+        />
+
+        {/* Neck */}
+        <path
+          d="M48 65 L48 79 L60 89 L73 79 L73 65Z"
+          fill="#f0b5a0"
+        />
+
+        {/* Face */}
+        <ellipse
+          cx="60"
+          cy="49"
+          rx="21"
+          ry="28"
+          fill="#ffd1ba"
+        />
+
+        {/* Hair */}
+        <path
+          d="M39 44 L38 30 Q38 17 49 17 H67 Q80 16 80 27 Q86 28 84 44 L76 42 L73 32 Q60 39 46 32 L44 42Z"
+          fill="#24475e"
+        />
+
+        {/* Jacket */}
+        <path
+          d="M45 79 L33 89 L40 96 L34 101 L48 120 L55 120Z M75 79 L87 89 L80 96 L86 101 L72 120 L65 120Z"
+          fill="#24465f"
+        />
+
+        {/* Tie */}
+        <path
+          d="M60 89 L66 95 L63 101 L68 120 L52 120 L57 101 L54 95Z"
+          fill="#d35c62"
+        />
+      </svg>
+
+    </div>
+  );
+}
+
+// Welcome screen for new students
 function WelcomeForm({
   userId,
   onSaved,
@@ -131,22 +240,24 @@ function WelcomeForm({
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-6 py-4 sm:py-10">
+    <section className="mx-auto w-full max-w-xl space-y-6 py-6 sm:py-12">
 
       {/* Welcome message */}
       <header className="space-y-3 text-center">
+
         <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-muted">
           <GraduationCap className="size-8" />
         </div>
 
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+        <h1 className="text-2xl font-semibold tracking-tight">
           Welcome to NorthBridge Education!
         </h1>
 
-        <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
+        <p className="text-sm leading-relaxed text-muted-foreground">
           Your study abroad journey starts here.
-          Tell us about your study preferences to get started.
+          Tell us about your study preferences.
         </p>
+
       </header>
 
       <form
@@ -157,15 +268,12 @@ function WelcomeForm({
           disabled={saving}
           className="min-w-0 space-y-6"
         >
-          {/* Country selection */}
+          {/* Country */}
           <section className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Globe2 className="size-5" />
 
-              <h2 className="font-semibold">
-                Where would you like to study?
-              </h2>
-            </div>
+            <h2 className="font-medium">
+              Where would you like to study?
+            </h2>
 
             <div className="grid gap-3 sm:grid-cols-2">
               {countries.map((item) => (
@@ -173,10 +281,7 @@ function WelcomeForm({
                   key={item.value}
                   type="button"
                   aria-pressed={country === item.value}
-                  onClick={() => {
-                    setCountry(item.value);
-                    setError("");
-                  }}
+                  onClick={() => setCountry(item.value)}
                   className={[
                     "flex min-h-20 items-center gap-3 rounded-xl border p-4 text-left transition-colors",
                     "focus-visible:outline-2 focus-visible:outline-ring",
@@ -185,14 +290,11 @@ function WelcomeForm({
                       : "hover:bg-muted/50",
                   ].join(" ")}
                 >
-                  <span
-                    className="text-3xl"
-                    aria-hidden="true"
-                  >
+                  <span className="text-3xl">
                     {item.flag}
                   </span>
 
-                  <span className="flex-1 font-medium">
+                  <span className="flex-1 text-sm font-medium">
                     {item.label}
                   </span>
 
@@ -202,18 +304,16 @@ function WelcomeForm({
                 </button>
               ))}
             </div>
+
           </section>
 
-          {/* Preferred degree */}
+          {/* Programme */}
           {country && (
             <section className="space-y-3 border-t pt-5">
-              <div className="flex items-center gap-2">
-                <GraduationCap className="size-5" />
 
-                <h2 className="font-semibold">
-                  What is your preferred degree?
-                </h2>
-              </div>
+              <h2 className="font-medium">
+                What is your preferred degree?
+              </h2>
 
               <div className="grid gap-3 sm:grid-cols-3">
                 {degrees.map((item) => (
@@ -221,12 +321,9 @@ function WelcomeForm({
                     key={item.value}
                     type="button"
                     aria-pressed={degree === item.value}
-                    onClick={() => {
-                      setDegree(item.value);
-                      setError("");
-                    }}
+                    onClick={() => setDegree(item.value)}
                     className={[
-                      "flex min-h-14 items-center justify-between gap-2 rounded-lg border px-4 py-3 text-sm font-medium",
+                      "flex min-h-12 items-center justify-between gap-2 rounded-lg border p-3 text-sm font-medium",
                       "focus-visible:outline-2 focus-visible:outline-ring",
                       degree === item.value
                         ? "border-primary bg-primary/5 ring-1 ring-primary"
@@ -241,12 +338,16 @@ function WelcomeForm({
                   </button>
                 ))}
               </div>
+
             </section>
           )}
         </fieldset>
 
         {error && (
-          <p role="alert" className="text-sm text-destructive">
+          <p
+            role="alert"
+            className="text-sm text-destructive"
+          >
             {error}
           </p>
         )}
@@ -262,11 +363,13 @@ function WelcomeForm({
             <ArrowRight className="size-4" />
           )}
         </Button>
+
       </form>
-    </div>
+    </section>
   );
 }
 
+// Main student profile
 export function ProfilePage() {
   const [profile, setProfile] =
     useState<ProfileState>({
@@ -274,8 +377,9 @@ export function ProfilePage() {
     });
 
   const [attempt, setAttempt] = useState(0);
-  const [showDraft, setShowDraft] = useState(false);
+  const [editing, setEditing] = useState(false);
 
+  // Load profile information
   useEffect(() => {
     let active = true;
 
@@ -288,21 +392,50 @@ export function ProfilePage() {
 
         if (authError || !user) {
           throw new Error(
-            "Please sign in again to open your profile.",
+            "Please sign in again.",
           );
         }
 
+        // Check registered candidate
+        const {
+          data: candidate,
+          error: candidateError,
+        } = await supabase
+          .from("candidates")
+          .select(
+            "id, first_name, last_name, date_of_birth, phone, other_info",
+          )
+          .eq("auth_user_id", user.id)
+          .maybeSingle();
+
+        if (candidateError) {
+          throw candidateError;
+        }
+
+        // Load study preferences
+        const {
+          data: preferenceData,
+          error: preferenceError,
+        } = await supabase
+          .from("student_study_preferences")
+          .select(
+            "destination_country, student_type",
+          )
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (preferenceError) {
+          throw preferenceError;
+        }
+
+        const preferences =
+          preferenceData as Preferences | null;
+
         // Existing registered candidate
-        const { data: candidate, error: candidateError } =
-          await supabase
-            .from("candidates")
-            .select("id")
-            .eq("auth_user_id", user.id)
-            .maybeSingle();
-
-        if (candidateError) throw candidateError;
-
         if (candidate) {
+          const otherInfo =
+            candidate.other_info ?? {};
+
           if (active) {
             setProfile({
               status: "ready",
@@ -310,35 +443,42 @@ export function ProfilePage() {
               email: user.email ?? "",
               candidateId: candidate.id,
               hasDraft: false,
-              preferences: null,
+              preferences,
+              personal: readPersonalInfo({
+                ...otherInfo,
+                given_name: candidate.first_name,
+                surname: candidate.last_name,
+                date_of_birth: candidate.date_of_birth,
+                number: candidate.phone,
+              }),
+              destination:
+                preferences?.destination_country ??
+                String(
+                  otherInfo.destination_country ?? "",
+                ),
+              degree:
+                preferences?.student_type ??
+                String(
+                  otherInfo.student_type ?? "",
+                ),
             });
           }
 
           return;
         }
 
-        // Check saved draft and study preferences
-        const [draftResult, preferencesResult] =
-          await Promise.all([
-            supabase
-              .from("draft")
-              .select("user_id")
-              .eq("user_id", user.id)
-              .maybeSingle(),
+        // Check unapproved student draft
+        const {
+          data: draft,
+          error: draftError,
+        } = await supabase
+          .from("draft")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle();
 
-            supabase
-              .from("student_study_preferences")
-              .select("destination_country, student_type")
-              .eq("user_id", user.id)
-              .maybeSingle(),
-          ]);
-
-        if (draftResult.error) {
-          throw draftResult.error;
-        }
-
-        if (preferencesResult.error) {
-          throw preferencesResult.error;
+        if (draftError) {
+          throw draftError;
         }
 
         if (active) {
@@ -347,9 +487,20 @@ export function ProfilePage() {
             userId: user.id,
             email: user.email ?? "",
             candidateId: null,
-            hasDraft: Boolean(draftResult.data),
-            preferences:
-              preferencesResult.data as Preferences | null,
+            hasDraft: Boolean(draft),
+            preferences,
+            personal: readPersonalInfo(draft),
+            destination:
+              preferences?.destination_country ??
+              String(
+                draft?.destination_country ?? "",
+              ),
+            degree:
+              String(
+                draft?.student_type ||
+                preferences?.student_type ||
+                "",
+              ),
           });
         }
       } catch {
@@ -370,65 +521,53 @@ export function ProfilePage() {
     };
   }, [attempt]);
 
+  // Reload profile after editing
+  function refreshProfile() {
+    setEditing(false);
+    setProfile({ status: "loading" });
+    setAttempt((value) => value + 1);
+  }
+
+  // Loading
   if (profile.status === "loading") {
     return (
       <div
         role="status"
-        className="flex min-h-[250px] items-center justify-center text-sm text-muted-foreground"
+        className="flex min-h-[300px] items-center justify-center text-sm text-muted-foreground"
       >
         Loading your profile...
       </div>
     );
   }
 
+  // Loading error
   if (profile.status === "error") {
     return (
-      <EmptyState
-        icon={UserRound}
-        title="Could not load your profile"
-        description={profile.message}
-      >
+      <div className="flex min-h-[300px] flex-col items-center justify-center gap-3 text-center">
+
+        <UserRound className="size-10 text-muted-foreground" />
+
+        <p className="text-sm text-muted-foreground">
+          {profile.message}
+        </p>
+
         <Button
           variant="outline"
-          onClick={() => {
-            setProfile({ status: "loading" });
-            setAttempt((value) => value + 1);
-          }}
+          onClick={refreshProfile}
         >
           Try again
         </Button>
-      </EmptyState>
+
+      </div>
     );
   }
 
-  // Registered candidate: keep existing profile
-  if (profile.candidateId) {
-    return (
-      <CandidateProfilePage
-        key={profile.candidateId}
-        candidateId={profile.candidateId}
-        userId={profile.userId}
-        email={profile.email}
-      />
-    );
-  }
-
-  // Existing draft or student wants to complete profile
-  if (profile.hasDraft || showDraft) {
-    return (
-      <DraftProfilePage
-        key={profile.userId}
-        userId={profile.userId}
-        email={profile.email}
-        preferredStudentType={
-          profile.preferences?.student_type
-        }
-      />
-    );
-  }
-
-  // Brand-new student: only two questions
-  if (!profile.preferences) {
+  // New student welcome screen
+  if (
+    !profile.candidateId &&
+    !profile.hasDraft &&
+    !profile.preferences
+  ) {
     return (
       <WelcomeForm
         userId={profile.userId}
@@ -436,63 +575,195 @@ export function ProfilePage() {
           setProfile({
             ...profile,
             preferences,
+            destination:
+              preferences.destination_country,
+            degree:
+              preferences.student_type,
           });
         }}
       />
     );
   }
 
-  const selectedCountry = countries.find(
-    (item) =>
-      item.value ===
-      profile.preferences?.destination_country,
+  // Student's display name
+  const fullName =
+    [
+      profile.personal.given_name,
+      profile.personal.surname,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .trim() || "No Name";
+
+  // Destination label
+  const destinationLabel =
+    countries.find(
+      (item) =>
+        item.value === profile.destination,
+    )?.label ||
+    profile.destination ||
+    "Not selected";
+
+  // Programme label
+  const degreeLabel =
+    degrees.find(
+      (item) =>
+        item.value === profile.degree,
+    )?.label ||
+    profile.degree ||
+    "Not selected";
+
+  // Show only saved information
+  const savedFields = profileFields.filter(
+    ({ key }) =>
+      profile.personal[key].trim() !== "",
   );
 
-  const selectedDegree = degrees.find(
-    (item) =>
-      item.value === profile.preferences?.student_type,
-  );
-
-  // Preferences saved, but profile not completed
   return (
-    <section className="mx-auto max-w-4xl space-y-6">
+    <section className="mx-auto w-full max-w-6xl space-y-6">
 
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          My Profile
-        </h1>
+      {/* ==============================
+          PROFILE HEADER
+      ============================== */}
 
-        <p className="text-sm text-muted-foreground">
-          Manage your personal and academic information.
-        </p>
-      </header>
+      <div className="flex flex-col items-center gap-5 px-2 py-3 text-center sm:flex-row sm:items-center sm:text-left">
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border bg-card p-4 text-sm">
+        {/* Profile photo */}
+        <ProfileAvatar />
 
-        <div className="flex items-center gap-2">
-          <span>{selectedCountry?.flag}</span>
-          <span className="font-medium">
-            {selectedCountry?.label}
-          </span>
+        {/* Student details */}
+        <div className="min-w-0 flex-1 space-y-1">
+
+          <h1 className="break-words text-xl font-bold tracking-tight sm:text-2xl">
+            {fullName}
+          </h1>
+
+          <p className="break-all text-sm text-muted-foreground sm:text-base">
+            {profile.email}
+          </p>
+
+          <p className="text-sm sm:text-base">
+            <span className="text-muted-foreground">
+              Destination:
+            </span>{" "}
+
+            <span className="font-semibold">
+              {destinationLabel}
+            </span>
+          </p>
+
+          <p className="text-sm sm:text-base">
+            <span className="text-muted-foreground">
+              Programme:
+            </span>{" "}
+
+            <span className="font-semibold">
+              {degreeLabel}
+            </span>
+          </p>
+
         </div>
 
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <GraduationCap className="size-4" />
-          {selectedDegree?.label}
-        </div>
+        {/* Edit button */}
+        {!editing ? (
+          <Button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="h-11 w-full border border-green-300 bg-green-100 px-6 font-medium text-green-800 hover:bg-green-200 sm:w-auto"
+          >
+            <Pencil className="size-4" />
+            Edit
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={refreshProfile}
+            className="h-11 w-full sm:w-auto"
+          >
+            <ArrowLeft className="size-4" />
+            Back to profile
+          </Button>
+        )}
 
       </div>
 
-      <EmptyState
-        icon={UserRound}
-        title="Your profile is not completed yet"
-        description="Complete your profile when you are ready. Your information will help us guide you through your study abroad journey."
-      >
-        <Button onClick={() => setShowDraft(true)}>
-          Complete profile
-          <ArrowRight className="size-4" />
-        </Button>
-      </EmptyState>
+      {/* ==============================
+          PROFILE CONTENT AREA
+      ============================== */}
+
+      {editing ? (
+        <div className="space-y-4">
+
+          {profile.candidateId ? (
+            <CandidateProfilePage
+              key={profile.candidateId}
+              candidateId={profile.candidateId}
+              userId={profile.userId}
+              email={profile.email}
+            />
+          ) : (
+            <DraftProfilePage
+              key={profile.userId}
+              userId={profile.userId}
+              email={profile.email}
+              preferredStudentType={
+                profile.preferences?.student_type
+              }
+            />
+          )}
+
+        </div>
+      ) : (
+        <div className="min-h-[340px] rounded-xl border border-dashed p-5 sm:min-h-[420px] sm:p-6">
+
+          {savedFields.length === 0 ? (
+            <div className="flex min-h-[300px] flex-col items-center justify-center gap-3 text-center sm:min-h-[370px]">
+
+              <div className="flex size-14 items-center justify-center rounded-full bg-muted/50">
+                <UserRound className="size-6 text-muted-foreground" />
+              </div>
+
+              <p className="text-sm text-muted-foreground">
+                No additional profile information yet.
+              </p>
+
+            </div>
+          ) : (
+            <div className="space-y-5">
+
+              <h2 className="text-lg font-semibold">
+                Passport Information
+              </h2>
+
+              <dl className="grid gap-x-6 gap-y-5 sm:grid-cols-2">
+
+                {savedFields.map(({ key, label }) => (
+                  <div
+                    key={key}
+                    className={
+                      key === "permanent_address"
+                        ? "min-w-0 sm:col-span-2"
+                        : "min-w-0"
+                    }
+                  >
+                    <dt className="text-xs text-muted-foreground">
+                      {label}
+                    </dt>
+
+                    <dd className="mt-1 whitespace-pre-wrap break-words text-sm font-medium">
+                      {profile.personal[key]}
+                    </dd>
+                  </div>
+                ))}
+
+              </dl>
+
+            </div>
+          )}
+
+        </div>
+      )}
 
     </section>
   );
