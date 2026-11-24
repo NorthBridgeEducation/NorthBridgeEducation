@@ -1,6 +1,9 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
+import { FileText } from "lucide-react";
+import { Link } from "react-router-dom";
+import { EmptyState } from "../components/EmptyState";
 
 type Country = {
   id: string;
@@ -193,89 +196,44 @@ export function ApplicationPage() {
   }, [universityId]);
 
   async function submitApplication() {
-    if (!candidate || !programId) {
-      setError("Please select a program.");
-      return;
-    }
+    if (!candidate) {
+  return (
+    <section className="mx-auto max-w-4xl space-y-6">
 
-    setSubmitting(true);
-    setError("");
-    setSuccess("");
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold">
+          My Applications
+        </h1>
 
-    try {
-      const { data, error: insertError } = await supabase
-        .from("program_applications")
-        .insert({
-          candidate_id: candidate.id,
-          program_id: programId,
-          status: "Submitted",
-        })
-        .select("id, status, submitted_at")
-        .single();
+        <p className="text-sm text-muted-foreground">
+          View and manage your applications.
+        </p>
+      </header>
 
-      if (insertError) {
-        if (insertError.code === "23505") {
-          throw new Error(
-            "You have already applied to this program."
-          );
-        }
+      {error ? (
+        <EmptyState
+          icon={FileText}
+          title="Could not load applications"
+          description={error}
+        />
+      ) : (
+        <EmptyState
+          icon={FileText}
+          title="No applications yet"
+          description="Once your profile is completed and registered, you can start applying to your preferred programs."
+        >
+          <Link
+            to="/portal/profile"
+            className="inline-flex h-10 items-center justify-center rounded-md border px-4 text-sm font-medium hover:bg-muted"
+          >
+            Go to My Profile
+          </Link>
+        </EmptyState>
+      )}
 
-        throw insertError;
-      }
-
-      const selectedProgram = programs.find(
-        (program) => program.id === programId
-      );
-
-      const selectedUniversity = universities.find(
-        (university) => university.id === universityId
-      );
-
-      const selectedCountry = countries.find(
-        (country) => country.id === countryId
-      );
-
-      if (
-        selectedProgram &&
-        selectedUniversity &&
-        selectedCountry
-      ) {
-        setApplications((previous) => [
-          {
-            ...data,
-            program: {
-              name: selectedProgram.name,
-              degree_level: selectedProgram.degree_level,
-              university: {
-                name: selectedUniversity.name,
-                country: {
-                  name: selectedCountry.name,
-                },
-              },
-            },
-          },
-          ...previous,
-        ]);
-      }
-
-      setSuccess(
-        "Your application has been submitted successfully."
-      );
-
-      setCountryId("");
-      setUniversityId("");
-      setProgramId("");
-      setUniversities([]);
-      setPrograms([]);
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Application submission failed."
-      );
-    } finally {
-      setSubmitting(false);
-    }
+    </section>
+  );
+}
   }
 
   if (loading) {

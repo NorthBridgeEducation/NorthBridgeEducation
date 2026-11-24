@@ -193,6 +193,7 @@ type Draft = {
 type DraftProfileProps = {
   userId: string;
   email: string;
+  preferredStudentType?: StudentType;
 };
 
 // Read existing passport data from Supabase
@@ -341,6 +342,7 @@ function SectionHeading({
 export function DraftProfilePage({
   userId,
   email,
+  preferredStudentType,
 }: DraftProfileProps) {
   const [draft, setDraft] = useState<Draft | null>(null);
 
@@ -378,6 +380,10 @@ export function DraftProfilePage({
       }
 
       const savedPersonal = readPassportInfo(data);
+
+if (!savedPersonal.student_type && preferredStudentType) {
+  savedPersonal.student_type = preferredStudentType;
+}
       const savedEducation = readDraftEducation(data?.education);
 
       setPersonal(savedPersonal);
@@ -394,7 +400,7 @@ export function DraftProfilePage({
     void load();
 
     return () => controller.abort();
-  }, [userId]);
+  }, [userId, preferredStudentType]);
 
   function changeStep(nextStep: number) {
     if (!draft || saving) return;
@@ -794,6 +800,7 @@ export function DraftProfilePage({
                 </section>
 
                 {/* Student type selection */}
+                {!preferredStudentType && (
                 <section className="space-y-4 border-t pt-5">
                   <SectionHeading
                     title="What level of study are you applying for? *"
@@ -853,9 +860,12 @@ export function DraftProfilePage({
                       );
                     })}
                   </div>
+                
                 </section>
+                )}
               </>
-            )}
+              )}
+          
 
             {/* Step 2: Education */}
             {step === 1 && (

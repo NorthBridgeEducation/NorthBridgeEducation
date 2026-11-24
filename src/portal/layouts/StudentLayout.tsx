@@ -1,11 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
-  Bell,
-  CreditCard,
-  FileText,
   FolderOpen,
-  Languages,
   LogOut,
   Menu,
   Network,
@@ -17,12 +13,16 @@ import { Dialog as DialogPrimitive } from "radix-ui";
 import { supabase } from "@/lib/supabase/client";
 
 const navigation = [
-  { title: "My Profile", path: "/portal/profile", icon: UserRound },
-  { title: "Application", path: "/portal/application", icon: FileText },
-  { title: "Documents", path: "/portal/documents", icon: FolderOpen },
-  { title: "Payments", path: "/portal/payments", icon: CreditCard },
-  { title: "Notifications", path: "/portal/notifications", icon: Bell },
-  { title: "Language Tests", path: "/portal/language-tests", icon: Languages },
+  {
+    title: "My Profile",
+    path: "/portal/profile",
+    icon: UserRound,
+  },
+  {
+    title: "Documents",
+    path: "/portal/documents",
+    icon: FolderOpen,
+  },
 ];
 
 const iconButtonClass =
