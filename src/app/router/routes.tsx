@@ -101,6 +101,7 @@ export function AppRoutes() {
 
       {/* Student application */}
       <Route element={<StudentProtectedRoute />}>
+        <Route path="onboarding" element={<OnboardingPage />} />
         <Route path="/portal" element={<StudentLayout />}>
           <Route
             index
@@ -112,7 +113,6 @@ export function AppRoutes() {
           <Route path="payments" element={<PaymentsPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
           <Route path="language-tests" element={<LanguageTestsPage />} />
-          <Route path="onboarding" element={<OnboardingPage />} />
         </Route>
       </Route>
 
