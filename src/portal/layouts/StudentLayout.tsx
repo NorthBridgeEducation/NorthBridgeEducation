@@ -143,7 +143,7 @@ export function StudentLayout() {
           <span className="flex size-9 items-center justify-center rounded-lg bg-foreground text-background">
             <Network className="size-5" aria-hidden="true" />
           </span>
-          <span className="font-semibold tracking-tight">NBridge</span>
+          <span className="font-semibold tracking-tight">NorthBridge</span>
         </div>
 
         <p className="px-7 pt-5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
