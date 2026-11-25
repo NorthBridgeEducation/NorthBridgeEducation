@@ -371,6 +371,9 @@ function WelcomeForm({
 
 // Main student profile
 export function ProfilePage() {
+  useEffect(() => {
+  document.title = "NorthBridge Profile V3";
+}, []);
   const [profile, setProfile] =
     useState<ProfileState>({
       status: "loading",
