@@ -6,7 +6,6 @@ import {
   ArrowLeft,
   GraduationCap,
   CheckCircle2,
-  Pencil,
   UserRound,
 } from "lucide-react";
 
@@ -73,30 +72,6 @@ type ProfileState =
       destination: string;
       degree: string;
     };
-
-// Fields displayed after profile information is saved
-const profileFields: {
-  key: keyof PersonalInfo;
-  label: string;
-}[] = [
-  { key: "date_of_birth", label: "Date of birth" },
-  { key: "gender", label: "Gender" },
-  { key: "number", label: "Phone number" },
-  { key: "passport_number", label: "Passport number" },
-  { key: "nid_number", label: "NID number" },
-  { key: "place_birth", label: "Place of birth" },
-  {
-    key: "passport_date_of_issue",
-    label: "Passport date of issue",
-  },
-  {
-    key: "passport_date_of_expiry",
-    label: "Passport date of expiry",
-  },
-  { key: "fathers_name", label: "Father's name" },
-  { key: "mothers_name", label: "Mother's name" },
-  { key: "permanent_address", label: "Permanent address" },
-];
 
 // Default profile avatar
 function ProfileAvatar() {
@@ -372,8 +347,8 @@ function WelcomeForm({
 // Main student profile
 export function ProfilePage() {
   useEffect(() => {
-  document.title = "NorthBridge Profile V3";
-}, []);
+    document.title = "My Profile | NorthBridge Education";
+  }, []);
   const [profile, setProfile] =
     useState<ProfileState>({
       status: "loading",
@@ -616,158 +591,58 @@ export function ProfilePage() {
     profile.degree ||
     "Not selected";
 
-  // Show only saved information
-  const savedFields = profileFields.filter(
-    ({ key }) =>
-      profile.personal[key].trim() !== "",
-  );
-
   return (
-    <section className="mx-auto w-full max-w-6xl space-y-6">
-
-      {/* ==============================
-          PROFILE HEADER
-      ============================== */}
-
-      <div className="flex flex-col items-center gap-5 px-2 py-3 text-center sm:flex-row sm:items-center sm:text-left">
-
-        {/* Profile photo */}
+    <section className="mx-auto w-full space-y-3">
+      <header className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 gap-y-3 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:gap-x-5">
         <ProfileAvatar />
 
-        {/* Student details */}
-        <div className="min-w-0 flex-1 space-y-1">
-
-          <h1 className="break-words text-xl font-bold tracking-tight sm:text-2xl">
-            {fullName}
-          </h1>
-
-          <p className="break-all text-sm text-muted-foreground sm:text-base">
-            {profile.email}
-          </p>
-
-          <p className="text-sm sm:text-base">
-            <span className="text-muted-foreground">
-              Destination:
-            </span>{" "}
-
-            <span className="font-semibold">
-              {destinationLabel}
-            </span>
-          </p>
-
-          <p className="text-sm sm:text-base">
-            <span className="text-muted-foreground">
-              Programme:
-            </span>{" "}
-
-            <span className="font-semibold">
-              {degreeLabel}
-            </span>
-          </p>
-
+        <div className="min-w-0 break-words text-sm font-semibold leading-snug sm:text-base">
+          <h1 className="text-lg font-bold sm:text-xl">{fullName}</h1>
+          <p>{profile.email}</p>
+          <p>Destination: {destinationLabel}</p>
+          <p>Programme: {degreeLabel}</p>
         </div>
 
-        {/* Edit button */}
-        {!editing ? (
-          <Button
-            type="button"
-            onClick={() => setEditing(true)}
-            className="h-11 w-full border border-green-300 bg-green-100 px-6 font-medium text-green-800 hover:bg-green-200 sm:w-auto"
-          >
-            <Pencil className="size-4" />
-            Edit
-          </Button>
-        ) : (
+        {editing ? (
           <Button
             type="button"
             variant="outline"
             onClick={refreshProfile}
-            className="h-11 w-full sm:w-auto"
+            className="col-span-2 h-11 sm:col-span-1"
           >
             <ArrowLeft className="size-4" />
             Back to profile
           </Button>
+        ) : (
+          <Button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="col-span-2 h-11 min-w-24 border border-green-400 bg-green-200 font-semibold text-green-950 hover:bg-green-300 sm:col-span-1 sm:h-14"
+          >
+            Edit
+          </Button>
         )}
-
-      </div>
-
-      {/* ==============================
-          PROFILE CONTENT AREA
-      ============================== */}
+      </header>
 
       {editing ? (
-        <div className="space-y-4">
-
-          {profile.candidateId ? (
-            <CandidateProfilePage
-              key={profile.candidateId}
-              candidateId={profile.candidateId}
-              userId={profile.userId}
-              email={profile.email}
-            />
-          ) : (
-            <DraftProfilePage
-              key={profile.userId}
-              userId={profile.userId}
-              email={profile.email}
-              preferredStudentType={
-                profile.preferences?.student_type
-              }
-            />
-          )}
-
-        </div>
+        profile.candidateId ? (
+          <CandidateProfilePage
+            key={profile.candidateId}
+            candidateId={profile.candidateId}
+            userId={profile.userId}
+            email={profile.email}
+          />
+        ) : (
+          <DraftProfilePage
+            key={profile.userId}
+            userId={profile.userId}
+            email={profile.email}
+            preferredStudentType={profile.preferences?.student_type}
+          />
+        )
       ) : (
-        <div className="min-h-[340px] rounded-xl border border-dashed p-5 sm:min-h-[420px] sm:p-6">
-
-          {savedFields.length === 0 ? (
-            <div className="flex min-h-[300px] flex-col items-center justify-center gap-3 text-center sm:min-h-[370px]">
-
-              <div className="flex size-14 items-center justify-center rounded-full bg-muted/50">
-                <UserRound className="size-6 text-muted-foreground" />
-              </div>
-
-              <p className="text-sm text-muted-foreground">
-                No additional profile information yet.
-              </p>
-
-            </div>
-          ) : (
-            <div className="space-y-5">
-
-              <h2 className="text-lg font-semibold">
-                Passport Information
-              </h2>
-
-              <dl className="grid gap-x-6 gap-y-5 sm:grid-cols-2">
-
-                {savedFields.map(({ key, label }) => (
-                  <div
-                    key={key}
-                    className={
-                      key === "permanent_address"
-                        ? "min-w-0 sm:col-span-2"
-                        : "min-w-0"
-                    }
-                  >
-                    <dt className="text-xs text-muted-foreground">
-                      {label}
-                    </dt>
-
-                    <dd className="mt-1 whitespace-pre-wrap break-words text-sm font-medium">
-                      {profile.personal[key]}
-                    </dd>
-                  </div>
-                ))}
-
-              </dl>
-
-            </div>
-          )}
-
-        </div>
+        <div className="min-h-72 rounded-lg border border-dashed border-muted-foreground/45 sm:min-h-[clamp(21rem,55dvh,36rem)]" />
       )}
-
     </section>
   );
 }
