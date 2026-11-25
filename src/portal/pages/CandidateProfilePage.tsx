@@ -459,7 +459,8 @@ const programmes = [
         {sectionActions("personal")}
       </form>
         </TabsContent>
-        </Tabs>
+        
+        <TabsContent value="education">
       <section className="space-y-4">
         <h2 className="text-lg font-semibold">Educational Info</h2>
 
@@ -535,8 +536,10 @@ const programmes = [
           }),
         )}
       </section>
+</TabsContent>
 
       {showCertificateDemos && (
+        <TabsContent value="language">
         <form
           className="space-y-4 rounded-xl border bg-card p-4 sm:p-6"
           onSubmit={(event) =>
@@ -586,8 +589,10 @@ const programmes = [
           />
           {sectionActions("language-test", "Save demo")}
         </form>
+        </TabsContent>
       )}
 
+<TabsContent value="other">
       <form
         className="space-y-4 rounded-xl border bg-card p-4 sm:p-6"
         onSubmit={(event) =>
@@ -607,6 +612,8 @@ const programmes = [
 
         {sectionActions("other")}
       </form>
+      </TabsContent>
+      </Tabs>
     </div>
   );
 }
