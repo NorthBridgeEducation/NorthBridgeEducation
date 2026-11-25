@@ -386,7 +386,7 @@ const programmes = [
 
         {applicationsUnavailable && (
           <p className="mt-2 text-sm text-muted-foreground">
-            Could not load your programme applications. test for redoploy
+            Could not load your programme applications. 
           </p>
         )}
       </div>
