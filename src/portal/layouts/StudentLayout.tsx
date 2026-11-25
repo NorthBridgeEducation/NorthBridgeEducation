@@ -96,8 +96,10 @@ export function StudentLayout() {
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState("");
 
-  const currentPage =
-    navigation.find(({ path }) => pathname === path)?.title ?? "Student Portal";
+  const isProfile = pathname === "/portal/profile" || pathname === "/portal/profile/";
+  const currentPage = isProfile
+    ? "My Profile"
+    : navigation.find(({ path }) => pathname === path)?.title ?? "Student Portal";
 
   useEffect(() => {
     // Match Tailwind's md breakpoint so the drawer closes on desktop.
@@ -137,9 +139,21 @@ export function StudentLayout() {
   };
 
   return (
-    <div className="flex min-h-dvh bg-background text-foreground">
-      <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r bg-card md:flex">
-        <div className="flex h-16 shrink-0 items-center gap-3 border-b px-5">
+    <div
+      className={
+        isProfile
+          ? "mx-auto flex min-h-dvh max-w-[100rem] bg-background text-foreground md:my-8 md:min-h-[calc(100dvh_-_4rem)] md:w-[calc(100%_-_4rem)] md:rounded-lg md:border md:border-muted-foreground"
+          : "flex min-h-dvh bg-background text-foreground"
+      }
+    >
+      <aside
+        className={
+          isProfile
+            ? "sticky top-8 hidden h-[calc(100dvh_-_4rem_-_2px)] w-48 shrink-0 flex-col rounded-l-lg border-r bg-card md:flex"
+            : "sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r bg-card md:flex"
+        }
+      >
+        <div className={isProfile ? "flex h-12 shrink-0 items-center gap-2 border-b px-4" : "flex h-16 shrink-0 items-center gap-3 border-b px-5"}>
           <span className="flex size-9 items-center justify-center rounded-lg bg-foreground text-background">
             <Network className="size-5" aria-hidden="true" />
           </span>
@@ -154,7 +168,7 @@ export function StudentLayout() {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center border-b bg-card px-3 sm:px-5">
+        <header className={isProfile ? "sticky top-0 z-20 flex h-16 shrink-0 items-center border-b bg-card px-3 md:static md:h-8 md:rounded-tr-lg" : "sticky top-0 z-20 flex h-16 shrink-0 items-center border-b bg-card px-3 sm:px-5"}>
           <div className="flex min-w-0 items-center gap-2 md:hidden">
             <DialogPrimitive.Root open={menuOpen} onOpenChange={setMenuOpen}>
               <DialogPrimitive.Trigger asChild>
@@ -201,12 +215,14 @@ export function StudentLayout() {
             <span className="truncate text-sm font-semibold">{currentPage}</span>
           </div>
 
-          <span className="hidden text-sm font-medium md:block">
-            Student Workspace
-          </span>
+          {!isProfile && (
+            <span className="hidden text-sm font-medium md:block">
+              Student Workspace
+            </span>
+          )}
         </header>
 
-        <main className="flex-1 p-4 sm:p-7 lg:p-9">
+        <main className={isProfile ? "flex-1 px-4 pt-2 pb-4" : "flex-1 p-4 sm:p-7 lg:p-9"}>
           <div className="mx-auto w-full max-w-7xl">
             <Outlet />
           </div>
