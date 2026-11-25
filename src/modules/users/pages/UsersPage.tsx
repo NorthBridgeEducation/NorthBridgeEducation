@@ -48,38 +48,38 @@ function UserCard({ user }: { user: AuthUser }) {
   const avatarUrl = user.avatarUrl;
 
   return (
-    <li className="min-w-0 rounded-xl border bg-card p-4">
-      <div className="flex items-center gap-3">
-        <div className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-full bg-muted text-sm font-semibold">
-          {avatarUrl && avatarUrl !== failedAvatarUrl ? (
-            <img
-              src={avatarUrl}
-              alt=""
-              loading="lazy"
-              referrerPolicy="no-referrer"
-              className="size-full object-cover"
-              onError={() => setFailedAvatarUrl(avatarUrl)}
-            />
-          ) : (
-            <span aria-hidden="true">{initials}</span>
-          )}
-        </div>
-
-        <h2 className="min-w-0 break-words font-semibold">
-          {user.name || "Unnamed user"}
-        </h2>
+    <li className="flex min-w-0 items-start gap-2.5 rounded-lg border bg-card p-2.5">
+      <div className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-full bg-muted text-xs font-semibold">
+        {avatarUrl && avatarUrl !== failedAvatarUrl ? (
+          <img
+            src={avatarUrl}
+            alt=""
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            className="size-full object-cover"
+            onError={() => setFailedAvatarUrl(avatarUrl)}
+          />
+        ) : (
+          <span aria-hidden="true">{initials}</span>
+        )}
       </div>
 
-      <dl className="mt-4 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2 text-sm">
-        <dt className="text-muted-foreground">Phone</dt>
-        <dd className="break-words">{user.phone || "—"}</dd>
+      <div className="min-w-0 flex-1">
+        <h2 className="break-words text-sm font-semibold leading-5">
+          {user.name || "Unnamed user"}
+        </h2>
 
-        <dt className="text-muted-foreground">Email</dt>
-        <dd className="break-words">{user.email || "—"}</dd>
+        <dl className="text-xs leading-4 text-muted-foreground">
+          <dt className="sr-only">Email</dt>
+          <dd className="break-words">{user.email || "—"}</dd>
 
-        <dt className="text-muted-foreground">Last sign-in</dt>
-        <dd>{formatLastSignIn(user.lastSignInAt)}</dd>
-      </dl>
+          <dt className="sr-only">Phone</dt>
+          <dd className="break-words">{user.phone || "—"}</dd>
+
+          <dt className="sr-only">Last sign-in</dt>
+          <dd>{formatLastSignIn(user.lastSignInAt)}</dd>
+        </dl>
+      </div>
     </li>
   );
 }
@@ -168,7 +168,7 @@ export function UsersPage() {
               No users on this page.
             </p>
           ) : (
-            <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {state.data.users.map((user) => (
                 <UserCard key={user.id} user={user} />
               ))}
