@@ -174,8 +174,8 @@ type ProfileFormProps = {
 };
 
 export function ProfileForm({
-  title,
-  description,
+  // title,
+  // description,
   email,
   avatarUrl,
   applications,
