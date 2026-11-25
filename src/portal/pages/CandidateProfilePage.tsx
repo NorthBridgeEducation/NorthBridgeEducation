@@ -429,7 +429,7 @@ const programmes = [
       {showCertificateDemos && (
         <TabsTrigger value="language">Language Tests</TabsTrigger>
       )}
-      <TabsTrigger value="other">Other Info</TabsTrigger>
+      <TabsTrigger value="other">Other Info1</TabsTrigger>
     </TabsList>
   </div>
       <TabsContent value="personal">
