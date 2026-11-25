@@ -133,7 +133,8 @@ export function OnboardingPage() {
   }
 
   return (
-        <div className="flex min-h-dvh w-full items-center justify-center bg-background p-4 sm:p-8">
+    <div className="mx-auto w-full max-w-5xl py-2 sm:py-5 lg:py-8">
+        
       <header className="mb-5 flex flex-wrap items-center justify-between gap-3 sm:mb-6">
         <div className="flex min-w-0 items-center gap-3">
           <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#122c46] text-white">

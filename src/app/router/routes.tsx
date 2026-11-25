@@ -63,6 +63,7 @@ export function AppRoutes() {
       {/* Public pages - no authentication required */}
       <Route path="/get-started" element={<PublicLeadPage />} />
       <Route path="/home-page" element={<PublicLandingPage />} />
+      <Route path="/onboarding" element={<OnboardingPage />} />
       <Route path="/" element={<ComingSoonPage/>} />
       {/* Protected application */}
       <Route element={<ProtectedRoute />}>
@@ -101,7 +102,6 @@ export function AppRoutes() {
 
       {/* Student application */}
       <Route element={<StudentProtectedRoute />}>
-        <Route path="onboarding" element={<OnboardingPage />} />
         <Route path="/portal" element={<StudentLayout />}>
           <Route
             index
