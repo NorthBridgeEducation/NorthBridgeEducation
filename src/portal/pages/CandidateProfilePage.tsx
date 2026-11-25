@@ -603,7 +603,7 @@ function DemoCertificateUpload({
     <div className="min-w-0 space-y-2 border-t pt-3">
       <h4 className="text-sm font-medium">{level} certificate</h4>
       <p aria-live="polite" className="break-all text-sm text-muted-foreground">
-        {demoFileName || "No certificate uploaded"}
+        {demoFileName || "No certificate uploaded yet"}
       </p>
       {editing && (
         <DemoCertificatePicker
