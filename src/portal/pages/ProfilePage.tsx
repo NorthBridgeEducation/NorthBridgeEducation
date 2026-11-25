@@ -9,6 +9,7 @@ type ProfileState =
   | { status: "error"; message: string }
   | {
       status: "ready";
+      avatarUrl?: string;
       userId: string;
       email: string;
       candidateId: string | null;
@@ -42,6 +43,10 @@ export function ProfilePage() {
           setProfile({
             status: "ready",
             userId: user.id,
+            avatarUrl:
+  typeof user.user_metadata?.avatar_url === "string"
+    ? user.user_metadata.avatar_url
+    : undefined,
             email: user.email ?? "",
             candidateId: candidate?.id ?? null,
           });
@@ -92,6 +97,7 @@ export function ProfilePage() {
   return profile.candidateId ? (
     <CandidateProfilePage
       key={profile.candidateId}
+      avatarUrl={profile.avatarUrl}
       candidateId={profile.candidateId}
       userId={profile.userId}
       email={profile.email}

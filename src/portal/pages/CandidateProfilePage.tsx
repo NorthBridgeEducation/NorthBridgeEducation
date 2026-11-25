@@ -155,6 +155,12 @@ type ProfileFormProps = {
   title: string;
   description: string;
   email: string;
+  avatarUrl?: string;
+  applications?: {
+    programme: string;
+    destination: string;
+  }[];
+  applicationsUnavailable?: boolean;
   initialPersonal: PersonalInfo;
   initialEducation: EducationSections;
   savePersonal: (values: PersonalInfo) => Promise<void>;
@@ -171,6 +177,9 @@ export function ProfileForm({
   title,
   description,
   email,
+  avatarUrl,
+  applications,
+  applicationsUnavailable = false,
   initialPersonal,
   initialEducation,
   savePersonal,
@@ -314,19 +323,100 @@ export function ProfileForm({
       </div>
     );
   }
+const [avatarFailed, setAvatarFailed] = useState(false);
 
+const nameParts = [personal.given_name, personal.surname]
+  .map((part) => part.trim())
+  .filter(Boolean);
+
+const studentName = nameParts.join(" ") || "Student";
+const initials = nameParts.map((part) => part[0]).join("").toUpperCase() || "S";
+
+const destinations = [
+  ...new Set(applications?.map(({ destination }) => destination).filter(Boolean)),
+];
+const programmes = [
+  ...new Set(applications?.map(({ programme }) => programme).filter(Boolean)),
+];
   return (
     <div className="mx-auto w-full max-w-4xl space-y-4 sm:space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        <p className="text-sm text-muted-foreground">{description}</p>
-      </header>
+      
+{applications && (
+  <section
+    aria-label="Student profile summary"
+    className="rounded-xl border bg-card p-4 sm:p-6"
+  >
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+      {avatarUrl && !avatarFailed ? (
+        <img
+          src={avatarUrl}
+          alt=""
+          referrerPolicy="no-referrer"
+          onError={() => setAvatarFailed(true)}
+          className="size-16 shrink-0 rounded-full object-cover sm:size-20"
+        />
+      ) : (
+        <span
+          aria-hidden="true"
+          className="grid size-16 shrink-0 place-items-center rounded-full bg-primary/10 text-xl font-semibold text-primary sm:size-20"
+        >
+          {initials}
+        </span>
+      )}
 
+      <div className="min-w-0 flex-1">
+        <h2 className="break-words text-xl font-semibold">{studentName}</h2>
+        <p className="break-words text-sm text-muted-foreground">{email}</p>
+
+        <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div>
+            <dt className="text-sm text-muted-foreground">Destination</dt>
+            <dd className="break-words text-sm font-medium">
+              {destinations.join(", ") || "—"}
+            </dd>
+          </div>
+
+          <div>
+            <dt className="text-sm text-muted-foreground">Programme</dt>
+            <dd className="break-words text-sm font-medium">
+              {programmes.join(", ") || "—"}
+            </dd>
+          </div>
+        </dl>
+
+        {applicationsUnavailable && (
+          <p className="mt-2 text-sm text-muted-foreground">
+            Could not load your programme applications.
+          </p>
+        )}
+      </div>
+
+      {!readOnly && (
+        <Button
+          type="button"
+          variant="outline"
+          className="min-h-11 self-start sm:min-h-9"
+          disabled={disabled || edit !== null}
+          onClick={() => {
+            setNotice(null);
+            setEdit({ section: "personal", restore: () => setPersonal(personal) });
+            document.getElementById("profile-personal-info")?.scrollIntoView({
+              block: "start",
+            });
+          }}
+        >
+          Edit Profile
+        </Button>
+      )}
+    </div>
+  </section>
+)}
       <form
         className="space-y-4 rounded-xl border bg-card p-4 sm:p-6"
         onSubmit={(event) =>
           void saveSection(event, "personal", () => savePersonal(personal))
         }
+        id="profile-personal-info"
       >
         {sectionHeader("Personal Info", "personal", () => setPersonal(personal))}
         {!readOnly && edit?.section === "personal" ? (
@@ -567,12 +657,14 @@ type CandidateProfileProps = {
   candidateId: string;
   userId: string;
   email: string;
+  avatarUrl?: string;
 };
 
 export function CandidateProfilePage({
   candidateId,
   userId,
   email,
+  avatarUrl,
 }: CandidateProfileProps) {
   const [profile, setProfile] = useState<{
     personal: PersonalInfo;
@@ -581,7 +673,54 @@ export function CandidateProfilePage({
     otherInfo: Record<string, unknown>;
   } | null>(null);
   const [error, setError] = useState("");
+const [applications, setApplications] = useState<
+  NonNullable<ProfileFormProps["applications"]>
+>([]);
+const [applicationsUnavailable, setApplicationsUnavailable] = useState(false);
 
+useEffect(() => {
+  const controller = new AbortController();
+
+  async function loadApplications() {
+    const { data, error } = await supabase
+      .from("program_applications")
+      .select(`
+        program:programs (
+          name,
+          university:universities (
+            country:countries (name)
+          )
+        )
+      `)
+      .eq("candidate_id", candidateId)
+      .order("submitted_at", { ascending: false })
+      .abortSignal(controller.signal);
+
+    if (controller.signal.aborted) return;
+
+    if (error) {
+      setApplicationsUnavailable(true);
+      return;
+    }
+
+    const rows = data as unknown as {
+      program: {
+        name: string;
+        university: { country: { name: string } | null } | null;
+      } | null;
+    }[];
+
+    setApplications(
+      rows.map(({ program }) => ({
+        programme: program?.name ?? "",
+        destination: program?.university?.country?.name ?? "",
+      })),
+    );
+  }
+
+  void loadApplications();
+  return () => controller.abort();
+}, [candidateId]);
   useEffect(() => {
     let active = true;
 
@@ -723,6 +862,9 @@ export function CandidateProfilePage({
       savePersonal={savePersonal}
       saveEducation={saveEducation}
       showCertificateDemos
+      avatarUrl={avatarUrl}
+applications={applications}
+applicationsUnavailable={applicationsUnavailable}
     />
   );
 }
