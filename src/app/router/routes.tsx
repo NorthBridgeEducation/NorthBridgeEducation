@@ -16,6 +16,7 @@ import { OthersPage } from "../../modules/others/pages/OthersPage";
 import { SettingsPage } from "../../modules/settings/pages/SettingsPage";
 import { CandidateProfilePage } from "@/modules/candidate/pages/CandidateProfilePage";
 import { UsersPage } from "@/modules/users/pages/UsersPage";
+import { OnboardingPage } from "@/portal/pages/OnboardingPage";
 // testing
 import { DraftPage } from "@/modules/candidate/pages/DraftPage";
 import { CandidateDatabaseTestPage } from "@/modules/candidate/pages/CandidateDatabaseTestPage";
@@ -111,6 +112,7 @@ export function AppRoutes() {
           <Route path="payments" element={<PaymentsPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
           <Route path="language-tests" element={<LanguageTestsPage />} />
+          <Route path="onboarding" element={<OnboardingPage />} />
         </Route>
       </Route>
 
