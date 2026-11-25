@@ -3,7 +3,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase/client";
-
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 export const educationLevels = ["SSC", "HSC", "Bachelor"] as const;
 
 export type EducationLevel = (typeof educationLevels)[number];
@@ -193,6 +193,7 @@ export function ProfileForm({
   const [languageTest, setLanguageTest] = useState(() =>
     readFields(languageTestFields, null),
   );
+  const [activeTab, setActiveTab] = useState("personal");
   const [edit, setEdit] = useState<{
     section: string;
     restore: () => void;
@@ -414,6 +415,24 @@ const programmes = [
   )}
 </section>
 )}
+<Tabs
+  value={activeTab}
+  onValueChange={(value) => {
+    if (edit === null) setActiveTab(value);
+  }}
+  className="w-full gap-4"
+>
+  <div className="overflow-x-auto border-b pb-1">
+    <TabsList variant="line" aria-label="Profile sections">
+      <TabsTrigger value="personal">Personal Info</TabsTrigger>
+      <TabsTrigger value="education">Education</TabsTrigger>
+      {showCertificateDemos && (
+        <TabsTrigger value="language">Language Tests</TabsTrigger>
+      )}
+      <TabsTrigger value="other">Other Info</TabsTrigger>
+    </TabsList>
+  </div>
+      <TabsContent>
       <form
         className="space-y-4 rounded-xl border bg-card p-4 sm:p-6"
         onSubmit={(event) =>
@@ -439,7 +458,8 @@ const programmes = [
 
         {sectionActions("personal")}
       </form>
-
+        </TabsContent>
+        </Tabs>
       <section className="space-y-4">
         <h2 className="text-lg font-semibold">Educational Info</h2>
 
