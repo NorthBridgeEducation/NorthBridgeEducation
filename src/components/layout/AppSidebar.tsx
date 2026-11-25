@@ -45,7 +45,7 @@ export function AppSidebar() {
                 sidebarCollapsed ? "md:hidden" : ""
               }`}
             >
-              NBridge
+              NorthBridge
             </span>
           </div>
 
@@ -82,7 +82,7 @@ export function AppSidebar() {
             </div>
 
             <div className={sidebarCollapsed ? "md:hidden" : ""}>
-              <p className="text-sm font-medium">NBridge Workspace</p>
+              <p className="text-sm font-medium">NorthBridge Workspace</p>
               <p className="text-xs text-muted-foreground">Management</p>
             </div>
           </div>
