@@ -28,11 +28,16 @@ const navigationItems: NavigationItem[] = [
     path: "/app",
     icon: LayoutDashboard,
   },
+  // {
+  //   title: "Lead",
+  //   path: "/app/lead",
+  //   icon: Users,
+  // },
   {
-    title: "Lead",
-    path: "/app/lead",
-    icon: Users,
-  },
+  title: "Users",
+  path: "/app/users",
+  icon: Users,
+},
   {
   title: "Draft Applications",
   path: "/app/drafts",

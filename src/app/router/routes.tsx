@@ -15,7 +15,7 @@ import { FilesPage } from "../../modules/files/pages/FilesPage";
 import { OthersPage } from "../../modules/others/pages/OthersPage";
 import { SettingsPage } from "../../modules/settings/pages/SettingsPage";
 import { CandidateProfilePage } from "@/modules/candidate/pages/CandidateProfilePage";
-
+import { UsersPage } from "@/modules/users/pages/UsersPage";
 // testing
 import { DraftPage } from "@/modules/candidate/pages/DraftPage";
 import { CandidateDatabaseTestPage } from "@/modules/candidate/pages/CandidateDatabaseTestPage";
@@ -87,7 +87,7 @@ export function AppRoutes() {
             path="candidate-language-tests"
             element={<CandidateLanguageTestsPage />}
           />
-
+          <Route path="users" element={<UsersPage />} />
           <Route path="finance" element={<FinancePage />} />
           <Route path="files" element={<FilesPage />} />
           <Route path="others" element={<OthersPage />} />
