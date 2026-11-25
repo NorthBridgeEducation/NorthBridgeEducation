@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
-  Bell,
-  CreditCard,
-  FileText,
+  // Bell,
+  // CreditCard,
+  // FileText,
   FolderOpen,
-  Languages,
+  // Languages,
   LogOut,
   Menu,
   Network,
@@ -18,11 +18,11 @@ import { supabase } from "@/lib/supabase/client";
 
 const navigation = [
   { title: "My Profile", path: "/portal/profile", icon: UserRound },
-  { title: "Application", path: "/portal/application", icon: FileText },
+  // { title: "Application", path: "/portal/application", icon: FileText },
   { title: "Documents", path: "/portal/documents", icon: FolderOpen },
-  { title: "Payments", path: "/portal/payments", icon: CreditCard },
-  { title: "Notifications", path: "/portal/notifications", icon: Bell },
-  { title: "Language Tests", path: "/portal/language-tests", icon: Languages },
+  // { title: "Payments", path: "/portal/payments", icon: CreditCard },
+  // { title: "Notifications", path: "/portal/notifications", icon: Bell },
+  // { title: "Language Tests", path: "/portal/language-tests", icon: Languages },
 ];
 
 const iconButtonClass =
