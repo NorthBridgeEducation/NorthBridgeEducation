@@ -343,73 +343,76 @@ const programmes = [
       
 {applications && (
   <section
-    aria-label="Student profile summary"
-    className="rounded-xl border bg-card p-4 sm:p-6"
-  >
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-      {avatarUrl && !avatarFailed ? (
-        <img
-          src={avatarUrl}
-          alt=""
-          referrerPolicy="no-referrer"
-          onError={() => setAvatarFailed(true)}
-          className="size-16 shrink-0 rounded-full object-cover sm:size-20"
-        />
-      ) : (
-        <span
-          aria-hidden="true"
-          className="grid size-16 shrink-0 place-items-center rounded-full bg-primary/10 text-xl font-semibold text-primary sm:size-20"
-        >
-          {initials}
-        </span>
-      )}
+  aria-label="Student profile summary"
+  className="flex flex-wrap items-center gap-x-5 gap-y-3 py-2 sm:flex-nowrap sm:py-3"
+>
+  {avatarUrl && !avatarFailed ? (
+    <img
+      src={avatarUrl}
+      alt=""
+      referrerPolicy="no-referrer"
+      onError={() => setAvatarFailed(true)}
+      className="size-20 shrink-0 rounded-full object-cover sm:size-32"
+    />
+  ) : (
+    <span
+      aria-hidden="true"
+      className="grid size-20 shrink-0 place-items-center rounded-full bg-blue-100 text-2xl font-bold text-blue-800 sm:size-32 sm:text-4xl"
+    >
+      {initials}
+    </span>
+  )}
 
-      <div className="min-w-0 flex-1">
-        <h2 className="break-words text-xl font-semibold">{studentName}</h2>
-        <p className="break-words text-sm text-muted-foreground">{email}</p>
+  <div className="min-w-0 flex-1 space-y-1">
+    <h2 className="break-words text-lg font-extrabold leading-tight sm:text-xl">
+      {studentName}
+    </h2>
+    <p className="break-all text-sm font-semibold sm:text-base">{email}</p>
 
-        <dl className="mt-4 grid gap-3 sm:grid-cols-2">
-          <div>
-            <dt className="text-sm text-muted-foreground">Destination</dt>
-            <dd className="break-words text-sm font-medium">
-              {destinations.join(", ") || "—"}
-            </dd>
-          </div>
-
-          <div>
-            <dt className="text-sm text-muted-foreground">Programme</dt>
-            <dd className="break-words text-sm font-medium">
-              {programmes.join(", ") || "—"}
-            </dd>
-          </div>
-        </dl>
-
-        {applicationsUnavailable && (
-          <p className="mt-2 text-sm text-muted-foreground">
-            Could not load your programme applications. 
-          </p>
-        )}
+    <dl className="space-y-0.5 text-sm sm:text-base">
+      <div>
+        <dt className="inline font-bold">Destination: </dt>
+        <dd className="inline break-words font-semibold">
+          {destinations.join(", ") || "—"}
+        </dd>
       </div>
+      <div>
+        <dt className="inline font-bold">Programme: </dt>
+        <dd className="inline break-words font-semibold">
+          {programmes.join(", ") || "—"}
+        </dd>
+      </div>
+    </dl>
 
-      {!readOnly && (
-        <Button
-          type="button"
-          variant="outline"
-          className="min-h-11 self-start sm:min-h-9"
-          disabled={disabled || edit !== null}
-          onClick={() => {
-            setNotice(null);
-            setEdit({ section: "personal", restore: () => setPersonal(personal) });
-            document.getElementById("profile-personal-info")?.scrollIntoView({
-              block: "start",
-            });
-          }}
-        >
-          Edit Profile
-        </Button>
-      )}
-    </div>
-  </section>
+    {applicationsUnavailable && (
+      <p className="text-sm text-muted-foreground">
+        Could not load your programme applications.
+      </p>
+    )}
+  </div>
+
+  {!readOnly && (
+    <Button
+      type="button"
+      variant="outline"
+      aria-label="Edit profile"
+      className="ml-auto h-11 min-w-24 shrink-0 rounded-lg border-green-300 bg-green-200 font-semibold text-green-950 hover:bg-green-300 hover:text-green-950 sm:h-14"
+      disabled={disabled || edit !== null}
+      onClick={() => {
+        setNotice(null);
+        setEdit({
+          section: "personal",
+          restore: () => setPersonal(personal),
+        });
+        document.getElementById("profile-personal-info")?.scrollIntoView({
+          block: "start",
+        });
+      }}
+    >
+      Edit
+    </Button>
+  )}
+</section>
 )}
       <form
         className="space-y-4 rounded-xl border bg-card p-4 sm:p-6"
