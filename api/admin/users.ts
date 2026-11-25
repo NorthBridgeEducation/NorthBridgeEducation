@@ -26,7 +26,6 @@ export default async function handler(
     return res.status(400).json({ message: "Invalid page number." });
   }
 
-  const page = Number(pageParam);
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
   const key = process.env.SUPABASE_SECRET_KEY;
 
@@ -42,7 +41,7 @@ export default async function handler(
     });
 
     const { data, error } = await supabase.auth.admin.listUsers({
-      page,
+      page: Number(pageParam),
       perPage: PAGE_SIZE,
     });
 
@@ -50,29 +49,27 @@ export default async function handler(
 
     const users = data.users.map((user) => {
       const metadata = user.user_metadata;
-      const name =
-        [metadata?.full_name, metadata?.name, metadata?.display_name].find(
-          (value): value is string =>
-            typeof value === "string" && value.trim().length > 0,
-        )?.trim() ?? null;
 
-      const providers = [
-        ...new Set([
-          ...(user.identities ?? []).map((identity) => identity.provider),
-          ...(Array.isArray(user.app_metadata?.providers)
-            ? user.app_metadata.providers
-            : []),
-          user.app_metadata?.provider,
-        ].filter((value): value is string => typeof value === "string" && !!value)),
-      ];
+      const name = [
+        metadata?.full_name,
+        metadata?.name,
+        metadata?.display_name,
+      ].find(
+        (value): value is string =>
+          typeof value === "string" && value.trim().length > 0,
+      );
+
+      const avatarUrl = [metadata?.avatar_url, metadata?.picture].find(
+        (value): value is string =>
+          typeof value === "string" && value.trim().startsWith("https://"),
+      );
 
       return {
         id: user.id,
-        name,
-        email: user.email ?? null,
+        name: name?.trim() ?? null,
+        avatarUrl: avatarUrl?.trim() ?? null,
         phone: user.phone || null,
-        providers,
-        createdAt: user.created_at,
+        email: user.email || null,
         lastSignInAt: user.last_sign_in_at ?? null,
       };
     });
