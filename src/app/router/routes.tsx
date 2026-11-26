@@ -32,6 +32,7 @@ import { ApplicationPage } from "@/portal/pages/ApplicationPage";
 import { DocumentsPage } from "@/portal/pages/DocumentsPage";
 import { PaymentsPage } from "@/portal/pages/PaymentsPage";
 import { NotificationsPage } from "@/portal/pages/NotificationsPage";
+import { ProfilePage1 } from "@/portal/pages/profile/page/ProfilePage";
 // function ModulePlaceholder({ title }: { title: string }) {
 //   return (
 //     <div className="space-y-2">
@@ -108,6 +109,8 @@ export function AppRoutes() {
             element={<Navigate to="/portal/profile" replace />}
           />
           <Route path="profile" element={<ProfilePage />} />
+          <Route path="profile1" element={<ProfilePage1 />} />
+
           <Route path="application" element={<ApplicationPage />} />
           <Route path="documents" element={<DocumentsPage />} />
           <Route path="payments" element={<PaymentsPage />} />
