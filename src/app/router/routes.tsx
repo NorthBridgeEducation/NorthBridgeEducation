@@ -27,7 +27,6 @@ import { LanguageTestsPage } from "@/portal/pages/LanguageTestsPage";
 import { StudentLayout } from "@/portal/layouts/StudentLayout";
 import { StudentProtectedRoute } from "@/portal/router/StudentProtectedRoute";
 import { StudentLoginPage } from "@/portal/pages/LoginPage";
-import { ProfilePage } from "@/portal/pages/ProfilePage";
 import { ApplicationPage } from "@/portal/pages/ApplicationPage";
 import { DocumentsPage } from "@/portal/pages/DocumentsPage";
 import { PaymentsPage } from "@/portal/pages/PaymentsPage";
@@ -108,8 +107,8 @@ export function AppRoutes() {
             index
             element={<Navigate to="/portal/profile" replace />}
           />
-          <Route path="profile" element={<ProfilePage />} />
-          <Route path="profile1" element={<ProfilePage1 />} />
+          <Route path="profile" element={<ProfilePage1 />} />
+          <Route path="profile1" element={<Navigate to="/portal/profile" replace />} />
 
           <Route path="application" element={<ApplicationPage />} />
           <Route path="documents" element={<DocumentsPage />} />
