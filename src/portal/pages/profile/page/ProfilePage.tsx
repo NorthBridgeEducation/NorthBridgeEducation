@@ -1,9 +1,9 @@
-import { CandidateProfilePage } from "../../CandidateProfilePage";
-import { DraftProfilePage } from "../../DraftProfilePage";
 import { ProfileError, ProfileLoading } from "../components/ProfileFeedback";
 import { usePortalProfile } from "../hooks/usePortalProfile";
+import { CandidateProfilePage } from "./CandidateProfilePage";
+import { DraftProfilePage } from "./DraftProfilePage";
 
-export function ProfilePage1() {
+export function ProfilePage() {
   const { profile, retry } = usePortalProfile();
 
   if (profile.status === "loading") {
@@ -18,10 +18,10 @@ export function ProfilePage1() {
     return (
       <CandidateProfilePage
         key={profile.candidateId}
-        avatarUrl={profile.avatarUrl}
         candidateId={profile.candidateId}
         userId={profile.userId}
         email={profile.email}
+        avatarUrl={profile.avatarUrl}
       />
     );
   }
@@ -31,6 +31,7 @@ export function ProfilePage1() {
       key={profile.userId}
       userId={profile.userId}
       email={profile.email}
+      avatarUrl={profile.avatarUrl}
     />
   );
 }

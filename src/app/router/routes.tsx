@@ -23,16 +23,16 @@ import { CandidateDatabaseTestPage } from "@/modules/candidate/pages/CandidateDa
 import { CandidateEducationTestPage } from "@/modules/candidate/pages/CandidateEducationTestPage";
 import { CandidateLanguageTestsPage } from "@/modules/candidate/pages/CandidateLanguageTestsPage";
 import { LanguageTestsPage } from "@/portal/pages/LanguageTestsPage";
+import { StudentProfilePage } from "@/portal/pages/profile/page/StudentProfilePage";
 // Student Portal
 import { StudentLayout } from "@/portal/layouts/StudentLayout";
 import { StudentProtectedRoute } from "@/portal/router/StudentProtectedRoute";
 import { StudentLoginPage } from "@/portal/pages/LoginPage";
-import { ProfilePage } from "@/portal/pages/ProfilePage";
 import { ApplicationPage } from "@/portal/pages/ApplicationPage";
 import { DocumentsPage } from "@/portal/pages/DocumentsPage";
 import { PaymentsPage } from "@/portal/pages/PaymentsPage";
 import { NotificationsPage } from "@/portal/pages/NotificationsPage";
-import { ProfilePage1 } from "@/portal/pages/profile/page/ProfilePage";
+import { ProfilePage } from "@/portal/pages/profile/page/ProfilePage";
 // function ModulePlaceholder({ title }: { title: string }) {
 //   return (
 //     <div className="space-y-2">
@@ -109,8 +109,7 @@ export function AppRoutes() {
             element={<Navigate to="/portal/profile" replace />}
           />
           <Route path="profile" element={<ProfilePage />} />
-          <Route path="profile1" element={<ProfilePage1 />} />
-
+          <Route path="profile-new" element={<StudentProfilePage />} />
           <Route path="application" element={<ApplicationPage />} />
           <Route path="documents" element={<DocumentsPage />} />
           <Route path="payments" element={<PaymentsPage />} />
@@ -121,7 +120,6 @@ export function AppRoutes() {
 
 
       {/* Default route */}
-        {/* <Route path="/" element={<Navigate to="/login" replace />} /> */}
         <Route
   path="*"
   element={<Navigate to="/portal/login" replace />}

@@ -1,3 +1,5 @@
+import { Button } from "@/components/ui/button";
+
 export function ProfileLoading() {
   return <p role="status">Loading your profile…</p>;
 }
@@ -14,13 +16,9 @@ export function ProfileError({ message, onRetry }: ProfileErrorProps) {
         {message}
       </p>
 
-      <button
-        type="button"
-        className="rounded-md border px-4 py-2 text-sm font-medium"
-        onClick={onRetry}
-      >
+      <Button type="button" variant="outline" onClick={onRetry}>
         Try again
-      </button>
+      </Button>
     </div>
   );
 }

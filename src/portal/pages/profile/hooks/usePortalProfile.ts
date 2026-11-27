@@ -7,9 +7,9 @@ type ProfileState =
   | { status: "error"; message: string }
   | {
       status: "ready";
-      avatarUrl?: string;
       userId: string;
       email: string;
+      avatarUrl?: string;
       candidateId: string | null;
     };
 
@@ -18,7 +18,7 @@ export function usePortalProfile() {
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    let active = true;
+    const controller = new AbortController();
 
     async function loadProfile() {
       try {
@@ -26,6 +26,8 @@ export function usePortalProfile() {
           data: { user },
           error: authError,
         } = await supabase.auth.getUser();
+
+        if (controller.signal.aborted) return;
 
         if (authError || !user) {
           throw new Error("Please sign in again to open your profile.");
@@ -35,22 +37,26 @@ export function usePortalProfile() {
           .from("candidates")
           .select("id")
           .eq("auth_user_id", user.id)
+          .abortSignal(controller.signal)
           .maybeSingle();
 
-        if (candidateError) throw candidateError;
-        if (!active) return;
+        if (controller.signal.aborted) return;
+
+        if (candidateError) {
+          throw new Error("Could not load your profile. Please try again.");
+        }
 
         const avatarUrl = user.user_metadata?.avatar_url;
 
         setProfile({
           status: "ready",
           userId: user.id,
-          avatarUrl: typeof avatarUrl === "string" ? avatarUrl : undefined,
           email: user.email ?? "",
+          avatarUrl: typeof avatarUrl === "string" ? avatarUrl : undefined,
           candidateId: candidate?.id ?? null,
         });
       } catch (error) {
-        if (!active) return;
+        if (controller.signal.aborted) return;
 
         setProfile({
           status: "error",
@@ -64,14 +70,12 @@ export function usePortalProfile() {
 
     void loadProfile();
 
-    return () => {
-      active = false;
-    };
+    return () => controller.abort();
   }, [attempt]);
 
   function retry() {
     setProfile({ status: "loading" });
-    setAttempt((value) => value + 1);
+    setAttempt((previous) => previous + 1);
   }
 
   return { profile, retry };
